@@ -6,7 +6,6 @@ export type AccountStatus = "pending" | "approved" | "rejected";
 export type UserRole = "user" | "admin";
 
 export interface IUser extends Document {
-  _id: ObjectId;
   email: string;
   password?: string;
 
