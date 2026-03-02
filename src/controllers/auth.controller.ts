@@ -117,7 +117,7 @@ export const approveUserController = async (
 ) => {
   try {
     const id = req.params.id as string;
-    const adminId = req.user.id.toString();
+    const adminId = req.user!.id.toString();
 
     const result = await authService.approveUserService(id, adminId);
 
@@ -134,7 +134,7 @@ export const rejectUserController = async (
 ) => {
   try {
     const id = req.params.id as string;
-    const adminId = req.user.id.toString();
+    const adminId = req.user!.id.toString();
 
     const result = await authService.rejectUserService(id, adminId);
 
@@ -226,7 +226,7 @@ export const changePasswordController = async (
 ) => {
   try {
     const { oldPassword, newPassword } = req.body;
-    const userId = req.user.id.toString();
+    const userId = req.user!.id.toString();
 
     const result = await authService.changePasswordService(
       userId,

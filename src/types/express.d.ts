@@ -1,9 +1,7 @@
-import type { IJwtPayload } from "./jwt.type";
+import { AuthTokenPayload } from "./jwt.type";
 
 declare module "express-serve-static-core" {
   interface Request {
-    user: IJwtPayload;
+    user?: AuthTokenPayload;
   }
 }
-
-export {};

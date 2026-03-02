@@ -2,6 +2,5 @@
 /node_modules
 
 .env
-.env.production
-
+.env.*
 firebase-service-account.json

@@ -1,6 +1,6 @@
 import { ObjectId } from "mongoose";
 
-export interface IJwtPayload {
+export interface AuthTokenPayload {
   id: ObjectId;
   email: string;
   role: "user" | "admin";

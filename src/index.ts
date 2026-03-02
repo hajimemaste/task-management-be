@@ -10,7 +10,6 @@ const startServer = async () => {
   await connectMongo();
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`🚀 Swagge running on http://localhost:${PORT}/api-docs/`);
   });
 };
 

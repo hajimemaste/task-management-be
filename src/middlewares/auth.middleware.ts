@@ -1,29 +1,47 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import { IJwtPayload } from "../types/jwt.type";
+import jwt, { JwtPayload } from "jsonwebtoken";
+import { AuthTokenPayload } from "../types/jwt.type";
 import { ApiError } from "../utils/ApiError";
 
 export const authMiddleware = (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction,
 ) => {
-  const token = req.headers.authorization?.split(" ")[1];
+  const authHeader = req.headers.authorization;
 
-  if (!token) {
-    throw new ApiError(401, "Chưa đăng nhập");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return next(new ApiError(401, "Chưa đăng nhập"));
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET chưa được cấu hình");
   }
 
   try {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET || "secret",
-    ) as IJwtPayload;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    req.user = decoded;
+    if (typeof decoded === "string") {
+      return next(new ApiError(401, "Token không hợp lệ"));
+    }
+
+    // type guard
+    const payload = decoded as JwtPayload & AuthTokenPayload;
+
+    if (!payload.id || !payload.email || !payload.role) {
+      return next(new ApiError(401, "Token không hợp lệ"));
+    }
+
+    req.user = {
+      id: payload.id,
+      email: payload.email,
+      role: payload.role,
+    };
 
     next();
   } catch {
-    throw new ApiError(401, "Token không hợp lệ");
+    return next(new ApiError(401, "Token không hợp lệ"));
   }
 };
