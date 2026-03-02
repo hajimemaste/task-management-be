@@ -18,6 +18,9 @@ export interface IUser extends Document {
   otp?: string;
   otpExpiredAt?: Date;
 
+  resetPasswordOtp?: string;
+  resetPasswordOtpExpiredAt?: Date;
+
   // Thông tin cơ bản
   name?: string;
   avatar?: IFirebaseUpload;

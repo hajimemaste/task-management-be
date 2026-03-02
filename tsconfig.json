@@ -6,6 +6,8 @@
     "outDir": "dist",
     "baseUrl": "./src",
     "strict": true,
-    "esModuleInterop": true
-  }
+    "esModuleInterop": true,
+    "lib": ["ES2020"]
+  },
+  "include": ["src"]
 }

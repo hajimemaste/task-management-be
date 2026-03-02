@@ -42,6 +42,9 @@ const userSchema = new Schema<IUser>(
       default: false,
     },
 
+    resetPasswordOtp: { type: String },
+    resetPasswordOtpExpiredAt: { type: Date },
+
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],

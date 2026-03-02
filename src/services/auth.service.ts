@@ -41,7 +41,8 @@ export const loginService = async (email: string, password: string) => {
   // 6. Tạo JWT
   const accessToken = jwt.sign(
     {
-      userId: user._id,
+      id: user._id.toString(),
+      email: user.email,
       role: user.role,
     },
     process.env.JWT_SECRET!,
@@ -50,7 +51,9 @@ export const loginService = async (email: string, password: string) => {
 
   const refreshToken = jwt.sign(
     {
-      userId: user._id,
+      id: user._id.toString(),
+      email: user.email,
+      role: user.role,
     },
     process.env.JWT_REFRESH_SECRET!,
     { expiresIn: "7d" },
@@ -89,7 +92,10 @@ export const googleLoginService = async (firebaseToken: string) => {
       role: "user",
     });
 
-    throw new ApiError(403, "Tài khoản đã đăng ký, đang chờ admin phê duyệt");
+    return {
+      pending: true,
+      message: "Tài khoản đã đăng ký, đang chờ admin phê duyệt",
+    };
   }
 
   // 4. Nếu tồn tại nhưng không phải google
@@ -105,7 +111,8 @@ export const googleLoginService = async (firebaseToken: string) => {
   // 6. Tạo JWT
   const accessToken = jwt.sign(
     {
-      userId: user._id,
+      id: user._id.toString(),
+      email: user.email,
       role: user.role,
     },
     process.env.JWT_SECRET!,
@@ -153,7 +160,8 @@ export const refreshAccessTokenService = async (refreshToken: string) => {
 
   const newAccessToken = jwt.sign(
     {
-      userId: user._id,
+      id: user._id.toString(),
+      email: user.email,
       role: user.role,
     },
     process.env.JWT_SECRET!,
@@ -170,28 +178,332 @@ export const refreshAccessTokenService = async (refreshToken: string) => {
 export const registerService = async (email: string, password: string) => {
   const existingUser = await User.findOne({ email });
 
-  if (existingUser) {
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const otp = generateOTP();
+  const otpExpiredAt = new Date(Date.now() + 5 * 60 * 1000);
+
+  // ✅ Case 1: Email đã tồn tại và đã verify
+  if (existingUser && existingUser.isEmailVerified) {
     throw new ApiError(400, "Email đã tồn tại");
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  // ✅ Case 2: Email tồn tại nhưng chưa verify -> update
+  if (existingUser && !existingUser.isEmailVerified) {
+    existingUser.password = hashedPassword;
+    existingUser.otp = otp;
+    existingUser.otpExpiredAt = otpExpiredAt;
+    existingUser.status = "pending";
 
-  const otp = generateOTP();
+    await existingUser.save();
+  }
 
-  await User.create({
-    email,
-    password: hashedPassword,
-    provider: "local",
-    otp,
-    otpExpiredAt: new Date(Date.now() + 5 * 60 * 1000),
-    isEmailVerified: false,
-    status: "pending",
-    role: "user",
-  });
+  // ✅ Case 3: Chưa tồn tại -> tạo mới
+  if (!existingUser) {
+    await User.create({
+      email,
+      password: hashedPassword,
+      provider: "local",
+      otp,
+      otpExpiredAt,
+      isEmailVerified: false,
+      status: "pending",
+      role: "user",
+    });
+  }
 
   await sendOTPEmail(email, otp);
 
   return {
     message: "Đã gửi OTP về email",
+  };
+};
+
+export const verifyOTPService = async (email: string, otp: string) => {
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new ApiError(404, "Email không tồn tại");
+  }
+
+  // ✅ đã verify rồi thì không cần verify nữa
+  if (user.isEmailVerified) {
+    throw new ApiError(400, "Email đã được xác thực");
+  }
+
+  // ❌ chưa có OTP
+  if (!user.otp || !user.otpExpiredAt) {
+    throw new ApiError(400, "OTP không hợp lệ");
+  }
+
+  // ❌ OTP sai
+  if (user.otp !== otp) {
+    throw new ApiError(400, "OTP không đúng");
+  }
+
+  // ❌ OTP hết hạn
+  if (user.otpExpiredAt < new Date()) {
+    throw new ApiError(400, "OTP đã hết hạn");
+  }
+
+  // ✅ Verify thành công
+  user.isEmailVerified = true;
+  user.status = "pending";
+  user.otp = undefined;
+  user.otpExpiredAt = undefined;
+
+  await user.save();
+
+  return {
+    message:
+      "Xác thực email thành công. Vui lòng chờ admin phê duyệt tài khoản",
+  };
+};
+
+export const resendOTPService = async (email: string) => {
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new ApiError(404, "Email không tồn tại");
+  }
+
+  // ❌ Đã verify rồi thì không gửi nữa
+  if (user.isEmailVerified) {
+    throw new ApiError(400, "Email đã được xác thực");
+  }
+
+  // ❌ OTP vẫn còn hạn -> không cho resend (anti spam)
+  if (user.otpExpiredAt && user.otpExpiredAt > new Date()) {
+    throw new ApiError(
+      429,
+      "OTP vẫn còn hiệu lực, vui lòng kiểm tra email hoặc thử lại sau",
+    );
+  }
+
+  // ✅ Tạo OTP mới
+  const newOtp = generateOTP();
+
+  user.otp = newOtp;
+  user.otpExpiredAt = new Date(Date.now() + 5 * 60 * 1000); // 5 phút
+
+  await user.save();
+
+  await sendOTPEmail(email, newOtp);
+
+  return {
+    message: "Đã gửi lại OTP về email",
+  };
+};
+
+// ========================= ADMIN =========================
+export const approveUserService = async (userId: string, adminId: string) => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new ApiError(404, "User không tồn tại");
+  }
+
+  // ❌ chưa verify mail thì không cho duyệt
+  if (!user.isEmailVerified) {
+    throw new ApiError(400, "User chưa xác thực email");
+  }
+
+  // ❌ đã duyệt rồi
+  if (user.status === "approved") {
+    throw new ApiError(400, "User đã được duyệt");
+  }
+
+  user.status = "approved";
+  user.approvedBy = adminId;
+  user.approvedAt = new Date();
+
+  await user.save();
+
+  return {
+    message: "Duyệt tài khoản thành công",
+  };
+};
+
+export const rejectUserService = async (userId: string, adminId: string) => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new ApiError(404, "User không tồn tại");
+  }
+
+  if (user.status === "rejected") {
+    throw new ApiError(400, "User đã bị từ chối trước đó");
+  }
+
+  user.status = "rejected";
+  user.approvedBy = adminId;
+  user.approvedAt = new Date();
+
+  await user.save();
+
+  return {
+    message: "Đã từ chối tài khoản",
+  };
+};
+
+export const getUsersByStatusService = async (
+  status?: "pending" | "approved" | "rejected",
+) => {
+  const filter: any = {};
+
+  if (status) {
+    filter.status = status;
+  }
+
+  const users = await User.find(filter)
+    .select(
+      "-password -otp -otpExpiredAt -resetPasswordOtp -resetPasswordOtpExpiredAt",
+    )
+    .sort({ createdAt: -1 });
+
+  return users;
+};
+
+// ========================= FORGOT PASSWORD =========================
+export const forgotPasswordService = async (email: string) => {
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new ApiError(404, "Email không tồn tại");
+  }
+
+  if (!user.isEmailVerified || user.status !== "approved") {
+    throw new ApiError(403, "Tài khoản chưa được kích hoạt");
+  }
+
+  // ❌ OTP reset vẫn còn hạn
+  if (
+    user.resetPasswordOtpExpiredAt &&
+    user.resetPasswordOtpExpiredAt > new Date()
+  ) {
+    throw new ApiError(429, "OTP vẫn còn hiệu lực, vui lòng kiểm tra email");
+  }
+
+  const otp = generateOTP();
+
+  user.resetPasswordOtp = otp;
+  user.resetPasswordOtpExpiredAt = new Date(Date.now() + 5 * 60 * 1000);
+
+  await user.save();
+
+  await sendOTPEmail(email, otp);
+
+  return {
+    message: "Đã gửi OTP reset mật khẩu",
+  };
+};
+
+export const resetPasswordService = async (
+  email: string,
+  otp: string,
+  newPassword: string,
+) => {
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new ApiError(404, "Email không tồn tại");
+  }
+
+  if (!user.resetPasswordOtp || !user.resetPasswordOtpExpiredAt) {
+    throw new ApiError(400, "OTP không hợp lệ");
+  }
+
+  if (user.resetPasswordOtp !== otp) {
+    throw new ApiError(400, "OTP không đúng");
+  }
+
+  if (user.resetPasswordOtpExpiredAt < new Date()) {
+    throw new ApiError(400, "OTP đã hết hạn");
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  user.password = hashedPassword;
+  user.resetPasswordOtp = undefined;
+  user.resetPasswordOtpExpiredAt = undefined;
+
+  await user.save();
+
+  return {
+    message: "Đặt lại mật khẩu thành công",
+  };
+};
+
+export const resendResetPasswordOtpService = async (email: string) => {
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new ApiError(404, "Email không tồn tại");
+  }
+
+  if (!user.isEmailVerified || user.status !== "approved") {
+    throw new ApiError(403, "Tài khoản chưa được kích hoạt");
+  }
+
+  // ❌ OTP reset vẫn còn hạn
+  if (
+    user.resetPasswordOtpExpiredAt &&
+    user.resetPasswordOtpExpiredAt > new Date()
+  ) {
+    throw new ApiError(
+      429,
+      "OTP vẫn còn hiệu lực, vui lòng kiểm tra email hoặc thử lại sau",
+    );
+  }
+
+  const newOtp = generateOTP();
+
+  user.resetPasswordOtp = newOtp;
+  user.resetPasswordOtpExpiredAt = new Date(Date.now() + 5 * 60 * 1000);
+
+  await user.save();
+
+  await sendOTPEmail(email, newOtp);
+
+  return {
+    message: "Đã gửi lại OTP reset mật khẩu",
+  };
+};
+
+// ========================= CHANGE PASSWORD =========================
+export const changePasswordService = async (
+  userId: string,
+  oldPassword: string,
+  newPassword: string,
+) => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new ApiError(404, "User không tồn tại");
+  }
+
+  if (!user.password) {
+    throw new ApiError(400, "Tài khoản không hỗ trợ đổi mật khẩu");
+  }
+
+  const isMatch = await bcrypt.compare(oldPassword, user.password);
+
+  if (!isMatch) {
+    throw new ApiError(400, "Mật khẩu cũ không đúng");
+  }
+
+  const isSame = await bcrypt.compare(newPassword, user.password);
+
+  if (isSame) {
+    throw new ApiError(400, "Mật khẩu mới không được trùng mật khẩu cũ");
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  user.password = hashedPassword;
+
+  await user.save();
+
+  return {
+    message: "Đổi mật khẩu thành công",
   };
 };
