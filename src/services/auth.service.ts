@@ -121,7 +121,9 @@ export const googleLoginService = async (firebaseToken: string) => {
 
   const refreshToken = jwt.sign(
     {
-      userId: user._id,
+      id: user._id.toString(),
+      email: user.email,
+      role: user.role,
     },
     process.env.JWT_REFRESH_SECRET!,
     { expiresIn: "7d" },
@@ -148,7 +150,7 @@ export const refreshAccessTokenService = async (refreshToken: string) => {
     throw new ApiError(401, "Refresh token invalid");
   }
 
-  const user = await User.findById(decoded.userId);
+  const user = await User.findById(decoded.id);
 
   if (!user) {
     throw new ApiError(401, "User not found");
@@ -175,7 +177,11 @@ export const refreshAccessTokenService = async (refreshToken: string) => {
 
 // ========================= REGISTER =========================
 
-export const registerService = async (email: string, password: string) => {
+export const registerService = async (
+  email: string,
+  password: string,
+  name: string,
+) => {
   const existingUser = await User.findOne({ email });
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -193,6 +199,7 @@ export const registerService = async (email: string, password: string) => {
     existingUser.otp = otp;
     existingUser.otpExpiredAt = otpExpiredAt;
     existingUser.status = "pending";
+    existingUser.name = name;
 
     await existingUser.save();
   }
@@ -204,6 +211,7 @@ export const registerService = async (email: string, password: string) => {
       password: hashedPassword,
       provider: "local",
       otp,
+      name,
       otpExpiredAt,
       isEmailVerified: false,
       status: "pending",
@@ -466,6 +474,33 @@ export const resendResetPasswordOtpService = async (email: string) => {
 
   return {
     message: "Đã gửi lại OTP reset mật khẩu",
+  };
+};
+
+export const checkResetPasswordOtpService = async (
+  email: string,
+  otp: string,
+) => {
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new ApiError(404, "Email không tồn tại");
+  }
+
+  if (!user.resetPasswordOtp || !user.resetPasswordOtpExpiredAt) {
+    throw new ApiError(400, "OTP không hợp lệ");
+  }
+
+  if (user.resetPasswordOtpExpiredAt < new Date()) {
+    throw new ApiError(400, "OTP đã hết hạn");
+  }
+
+  if (user.resetPasswordOtp !== otp) {
+    throw new ApiError(400, "OTP không đúng");
+  }
+
+  return {
+    message: "OTP hợp lệ",
   };
 };
 

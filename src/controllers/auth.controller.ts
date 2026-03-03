@@ -59,14 +59,14 @@ export const refreshAccessTokenController = async (
 };
 
 export const registerController = async (
-  req: Request<{}, {}, { email: string; password: string }>,
+  req: Request<{}, {}, { email: string; password: string; name: string }>,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, name } = req.body;
 
-    const result = await authService.registerService(email, password);
+    const result = await authService.registerService(email, password, name);
 
     res.status(200).json(result);
   } catch (error) {
@@ -212,6 +212,22 @@ export const resendResetPasswordOtpController = async (
     const { email } = req.body;
 
     const result = await authService.resendResetPasswordOtpService(email);
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const checkResetPasswordOtpController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { email, otp } = req.body;
+
+    const result = await authService.checkResetPasswordOtpService(email, otp);
 
     res.status(200).json(result);
   } catch (error) {
