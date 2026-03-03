@@ -121,7 +121,9 @@ export const googleLoginService = async (firebaseToken: string) => {
 
   const refreshToken = jwt.sign(
     {
-      userId: user._id,
+      id: user._id.toString(),
+      email: user.email,
+      role: user.role,
     },
     process.env.JWT_REFRESH_SECRET!,
     { expiresIn: "7d" },
@@ -148,7 +150,7 @@ export const refreshAccessTokenService = async (refreshToken: string) => {
     throw new ApiError(401, "Refresh token invalid");
   }
 
-  const user = await User.findById(decoded.userId);
+  const user = await User.findById(decoded.id);
 
   if (!user) {
     throw new ApiError(401, "User not found");
