@@ -471,6 +471,33 @@ export const resendResetPasswordOtpService = async (email: string) => {
   };
 };
 
+export const checkResetPasswordOtpService = async (
+  email: string,
+  otp: string,
+) => {
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new ApiError(404, "Email không tồn tại");
+  }
+
+  if (!user.resetPasswordOtp || !user.resetPasswordOtpExpiredAt) {
+    throw new ApiError(400, "OTP không hợp lệ");
+  }
+
+  if (user.resetPasswordOtpExpiredAt < new Date()) {
+    throw new ApiError(400, "OTP đã hết hạn");
+  }
+
+  if (user.resetPasswordOtp !== otp) {
+    throw new ApiError(400, "OTP không đúng");
+  }
+
+  return {
+    message: "OTP hợp lệ",
+  };
+};
+
 // ========================= CHANGE PASSWORD =========================
 export const changePasswordService = async (
   userId: string,
