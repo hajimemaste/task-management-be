@@ -39,6 +39,13 @@ router.post(
 // 🔑 Reset Password
 router.post("/reset-password", authController.resetPasswordController);
 
+// 📩 Verify OTP
+
+router.post(
+  "/check-reset-password-otp",
+  authController.checkResetPasswordOtpController,
+);
+
 // ================= CHANGE PASSWORD =================
 
 // 🔑 Đổi mật khẩu khi đã login

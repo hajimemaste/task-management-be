@@ -219,6 +219,22 @@ export const resendResetPasswordOtpController = async (
   }
 };
 
+export const checkResetPasswordOtpController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { email, otp } = req.body;
+
+    const result = await authService.checkResetPasswordOtpService(email, otp);
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const changePasswordController = async (
   req: Request<{}, {}, { oldPassword: string; newPassword: string }>,
   res: Response,
