@@ -177,7 +177,11 @@ export const refreshAccessTokenService = async (refreshToken: string) => {
 
 // ========================= REGISTER =========================
 
-export const registerService = async (email: string, password: string) => {
+export const registerService = async (
+  email: string,
+  password: string,
+  name: string,
+) => {
   const existingUser = await User.findOne({ email });
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -195,6 +199,7 @@ export const registerService = async (email: string, password: string) => {
     existingUser.otp = otp;
     existingUser.otpExpiredAt = otpExpiredAt;
     existingUser.status = "pending";
+    existingUser.name = name;
 
     await existingUser.save();
   }
@@ -206,6 +211,7 @@ export const registerService = async (email: string, password: string) => {
       password: hashedPassword,
       provider: "local",
       otp,
+      name,
       otpExpiredAt,
       isEmailVerified: false,
       status: "pending",

@@ -59,14 +59,14 @@ export const refreshAccessTokenController = async (
 };
 
 export const registerController = async (
-  req: Request<{}, {}, { email: string; password: string }>,
+  req: Request<{}, {}, { email: string; password: string; name: string }>,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, name } = req.body;
 
-    const result = await authService.registerService(email, password);
+    const result = await authService.registerService(email, password, name);
 
     res.status(200).json(result);
   } catch (error) {
