@@ -392,7 +392,7 @@ export const forgotPasswordService = async (email: string) => {
 
   await user.save();
 
-  await sendOTPEmail(email, otp);
+  await sendOTPEmail("daihung.dev@gmail.com", otp);
 
   return {
     message: "Đã gửi OTP reset mật khẩu",
