@@ -89,7 +89,12 @@ export const googleLoginService = async (firebaseToken: string) => {
     user = await User.create({
       email,
       name,
-      avatar: picture,
+      avatar: {
+        secure_url: picture,
+        public_id: "google-avatar",
+        resource_type: "image",
+        original_filename: "google_avatar",
+      },
       provider: "google",
       isEmailVerified: true,
       firebaseUid: uid,
