@@ -371,6 +371,7 @@ export const rejectUserService = async (userId: string, adminId: string) => {
     message: "Đã từ chối và xoá tài khoản",
   };
 };
+
 export const getUsersByStatusService = async (
   status?: "pending" | "approved" | "rejected",
 ) => {
@@ -384,7 +385,8 @@ export const getUsersByStatusService = async (
     .select(
       "-password -otp -otpExpiredAt -resetPasswordOtp -resetPasswordOtpExpiredAt",
     )
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
 
   return users;
 };
