@@ -10,6 +10,7 @@ export interface IUser extends Document {
   password?: string;
 
   provider: AuthProvider;
+  firebaseUid?: string;
 
   isEmailVerified: boolean;
   status: AccountStatus;
@@ -21,7 +22,7 @@ export interface IUser extends Document {
   resetPasswordOtpExpiredAt?: Date;
 
   // Thông tin cơ bản
-  name?: string;
+  name: string;
   avatar?: IFirebaseUpload;
   role: UserRole;
 

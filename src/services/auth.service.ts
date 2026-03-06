@@ -4,7 +4,11 @@ import { User } from "../models/user.model";
 import { ApiError } from "../utils/ApiError";
 import admin from "../configs/firebase.config";
 import { generateOTP } from "../utils/otp.util";
-import { sendOTPEmail } from "../utils/sendMail";
+import {
+  sendApproveAccountEmail,
+  sendOTPEmail,
+  sendRejectAccountEmail,
+} from "../utils/sendMail";
 
 // ========================= LOGIN =========================
 
@@ -71,7 +75,7 @@ export const googleLoginService = async (firebaseToken: string) => {
   // 1. Verify Firebase ID Token
   const decodedToken = await admin.auth().verifyIdToken(firebaseToken);
 
-  const { email, name, picture } = decodedToken;
+  const { uid, email, name, picture } = decodedToken;
 
   if (!email) {
     throw new ApiError(400, "Email không tồn tại");
@@ -88,6 +92,7 @@ export const googleLoginService = async (firebaseToken: string) => {
       avatar: picture,
       provider: "google",
       isEmailVerified: true,
+      firebaseUid: uid,
       status: "pending",
       role: "user",
     });
@@ -326,6 +331,8 @@ export const approveUserService = async (userId: string, adminId: string) => {
 
   await user.save();
 
+  await sendApproveAccountEmail(user.email, user.name);
+
   return {
     message: "Duyệt tài khoản thành công",
   };
@@ -342,17 +349,23 @@ export const rejectUserService = async (userId: string, adminId: string) => {
     throw new ApiError(400, "User đã bị từ chối trước đó");
   }
 
-  user.status = "rejected";
-  user.approvedBy = adminId;
-  user.approvedAt = new Date();
+  await sendRejectAccountEmail(user.email, user.name);
 
-  await user.save();
+  if (user.firebaseUid) {
+    try {
+      await admin.auth().deleteUser(user.firebaseUid);
+    } catch (error) {
+      console.error("Delete Firebase user error:", error);
+    }
+  }
+
+  // xoá user trong database
+  await User.findByIdAndDelete(userId);
 
   return {
-    message: "Đã từ chối tài khoản",
+    message: "Đã từ chối và xoá tài khoản",
   };
 };
-
 export const getUsersByStatusService = async (
   status?: "pending" | "approved" | "rejected",
 ) => {
