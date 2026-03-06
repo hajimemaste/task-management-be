@@ -12,6 +12,10 @@ const userSchema = new Schema<IUser>(
       trim: true,
     },
 
+    firebaseUid: {
+      type: String,
+    },
+
     password: {
       type: String,
     },
@@ -19,6 +23,7 @@ const userSchema = new Schema<IUser>(
     name: {
       type: String,
       trim: true,
+      required: true,
     },
 
     avatar: {
