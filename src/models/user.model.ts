@@ -12,28 +12,12 @@ const userSchema = new Schema<IUser>(
       trim: true,
     },
 
-    firebaseUid: {
-      type: String,
-    },
-
     password: {
       type: String,
     },
 
-    name: {
+    firebaseUid: {
       type: String,
-      trim: true,
-      required: true,
-    },
-
-    avatar: {
-      type: FirebaseUploadSchema,
-    },
-
-    role: {
-      type: String,
-      enum: ["user", "admin"],
-      default: "user",
     },
 
     provider: {
@@ -47,13 +31,49 @@ const userSchema = new Schema<IUser>(
       default: false,
     },
 
-    resetPasswordOtp: { type: String },
-    resetPasswordOtpExpiredAt: { type: Date },
-
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],
       default: "pending",
+    },
+
+    name: {
+      type: String,
+      trim: true,
+      required: true,
+    },
+
+    avatar: {
+      type: FirebaseUploadSchema,
+    },
+
+    gender: {
+      type: Number,
+    },
+
+    dateOfBirth: {
+      type: Date,
+    },
+
+    phoneNumber: {
+      type: String,
+      trim: true,
+    },
+
+    position: {
+      type: String,
+      trim: true,
+    },
+
+    rank: {
+      type: String,
+      trim: true,
+    },
+
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
     },
 
     otp: {
@@ -61,6 +81,14 @@ const userSchema = new Schema<IUser>(
     },
 
     otpExpiredAt: {
+      type: Date,
+    },
+
+    resetPasswordOtp: {
+      type: String,
+    },
+
+    resetPasswordOtpExpiredAt: {
       type: Date,
     },
 
