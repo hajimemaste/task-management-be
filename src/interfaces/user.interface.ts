@@ -24,6 +24,12 @@ export interface IUser extends Document {
   // Thông tin cơ bản
   name: string;
   avatar?: IFirebaseUpload;
+  gender?: number;
+  dateOfBirth?: Date;
+  phoneNumber?: string;
+  position?: string;
+  rank?: string;
+
   role: UserRole;
 
   approvedBy?: string;
@@ -32,4 +38,14 @@ export interface IUser extends Document {
   createdAt?: Date;
   updatedAt?: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
+}
+
+export interface IUpdateProfile {
+  name?: string;
+  avatar?: IFirebaseUpload;
+  gender?: number;
+  dateOfBirth?: Date;
+  phoneNumber?: string;
+  position?: string;
+  rank?: string;
 }

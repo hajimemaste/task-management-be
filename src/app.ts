@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 
 import authRoutes from "./routes/auth.route";
+import userRoutes from "./routes/user.route";
 import errorMiddleware from "./middlewares/error.middleware";
 
 const app = express();
@@ -15,6 +16,8 @@ app.get("/", (req: Request, res: Response) => {
 
 // ✅ Routes
 app.use("/api/auth", authRoutes);
+// ✅ User
+app.use("/api/user", userRoutes);
 
 // ❗ Global error handling middleware
 app.use(errorMiddleware);
