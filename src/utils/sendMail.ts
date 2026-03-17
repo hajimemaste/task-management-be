@@ -3,7 +3,7 @@ import { resend } from "../configs/resend.config";
 export const sendOTPEmail = async (email: string, otp: string) => {
   try {
     const { data, error } = await resend.emails.send({
-      from: "Task Management <onboarding@resend.dev>",
+      from: "Task Management <support@mail.task-api.online>",
       to: email,
       subject: "Mã OTP xác thực",
       html: `
@@ -30,7 +30,7 @@ export const sendOTPEmail = async (email: string, otp: string) => {
 export const sendApproveAccountEmail = async (email: string, name: string) => {
   try {
     const { data, error } = await resend.emails.send({
-      from: "Task Management <onboarding@resend.dev>",
+      from: "Task Management <support@mail.task-api.online>",
       to: email,
       subject: "Tài khoản của bạn đã được duyệt",
       html: `
@@ -62,7 +62,7 @@ export const sendApproveAccountEmail = async (email: string, name: string) => {
 export const sendRejectAccountEmail = async (email: string, name: string) => {
   try {
     const { data, error } = await resend.emails.send({
-      from: "Task Management <onboarding@resend.dev>",
+      from: "Task Management <support@mail.task-api.online>",
       to: email,
       subject: "Thông báo về tài khoản của bạn",
       html: `
