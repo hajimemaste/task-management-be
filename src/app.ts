@@ -3,6 +3,7 @@ import cors from "cors";
 
 import authRoutes from "./routes/auth.route";
 import userRoutes from "./routes/user.route";
+import dropboxRoutes from "./routes/dropbox.route";
 import errorMiddleware from "./middlewares/error.middleware";
 
 const app = express();
@@ -18,6 +19,8 @@ app.get("/", (req: Request, res: Response) => {
 app.use("/api/auth", authRoutes);
 // ✅ User
 app.use("/api/user", userRoutes);
+// ✅ Dropbox
+app.use("/api/dropbox", dropboxRoutes);
 
 // ❗ Global error handling middleware
 app.use(errorMiddleware);
