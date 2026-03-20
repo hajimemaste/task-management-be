@@ -7,6 +7,7 @@ import {
   removeFile,
   rename,
   createFolder,
+  getTree,
 } from "../controllers/dropbox.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 
@@ -16,7 +17,7 @@ const upload = multer({
   storage: multer.memoryStorage(),
 
   limits: {
-    fileSize: 20 * 1024 * 1024, // 🔥 20MB (tăng lên cho file lớn)
+    fileSize: 20 * 1024 * 1024,
     files: 10,
   },
 
@@ -60,5 +61,7 @@ router.delete("/delete", authMiddleware, removeFile);
 
 // ✏️ rename file
 router.put("/rename", authMiddleware, rename);
+
+router.post("/tree", authMiddleware, getTree);
 
 export default router;

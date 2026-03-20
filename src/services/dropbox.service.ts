@@ -1,3 +1,4 @@
+import { TreeNode } from "../interfaces/dropbox.interface";
 import fetch from "node-fetch";
 
 const TOKEN = process.env.DROPBOX_TOKEN!;
@@ -14,6 +15,8 @@ const API_DELETE = "https://api.dropboxapi.com/2/files/delete_v2";
 const API_MOVE = "https://api.dropboxapi.com/2/files/move_v2";
 const API_LIST = "https://api.dropboxapi.com/2/files/list_folder";
 const API_CREATE_FOLDER = "https://api.dropboxapi.com/2/files/create_folder_v2";
+const API_LIST_CONTINUE =
+  "https://api.dropboxapi.com/2/files/list_folder/continue";
 
 const getHeaders = () => ({
   Authorization: `Bearer ${TOKEN}`,
@@ -168,4 +171,85 @@ export const renameFile = async (from: string, to: string) => {
       to_path: to,
     }),
   });
+};
+
+export const listAll = async (path: string) => {
+  let entries: any[] = [];
+
+  let res = await fetch(API_LIST, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify({ path }),
+  });
+
+  let data: any = await res.json();
+
+  if (data.error) {
+    throw new Error("List folder failed");
+  }
+
+  entries.push(...data.entries);
+
+  // 🔥 handle has_more
+  while (data.has_more) {
+    const res2 = await fetch(API_LIST_CONTINUE, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({ cursor: data.cursor }),
+    });
+
+    data = await res2.json();
+
+    if (data.error) {
+      throw new Error("List continue failed");
+    }
+
+    entries.push(...data.entries);
+  }
+
+  return entries;
+};
+
+export const buildTree = async (
+  path: string,
+  depth = 2, // 🔥 limit để tránh lag
+): Promise<TreeNode> => {
+  const name = path.split("/").pop() || "root";
+
+  // 👉 nếu depth = 0 → stop recursion
+  if (depth === 0) {
+    return {
+      name,
+      path,
+      folders: [],
+      files: [],
+    };
+  }
+
+  const entries = await listAll(path);
+
+  const folders = entries.filter((e) => e[".tag"] === "folder");
+  const files = entries.filter((e) => e[".tag"] === "file");
+
+  // 🔥 build folder children (recursive)
+  const children = await Promise.all(
+    folders.map((folder) => buildTree(folder.path_lower, depth - 1)),
+  );
+
+  return {
+    name,
+    path,
+
+    folders: children,
+
+    files: files.map((f) => ({
+      name: f.name,
+      path: f.path_lower,
+      size: f.size,
+    })),
+  };
+};
+
+export const getTreeService = async (path: string) => {
+  return buildTree(path, 2);
 };
