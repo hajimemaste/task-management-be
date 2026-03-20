@@ -68,21 +68,17 @@ export const ensureFolder = async (path: string) => {
 };
 
 // 📤 Upload 1 file
-export const uploadFile = async (
-  buffer: Buffer,
-  path: string,
-  mimetype?: string,
-) => {
+export const uploadFile = async (buffer: Buffer, path: string) => {
   // 🔥 đảm bảo folder tồn tại
   const folderPath = path.substring(0, path.lastIndexOf("/"));
   await ensureFolder(folderPath);
 
   // 🚀 upload
-  await fetch(API_UPLOAD, {
+  const uploadRes = await fetch(API_UPLOAD, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${TOKEN}`,
-      "Content-Type": mimetype || "application/octet-stream",
+      "Content-Type": "application/octet-stream",
       "Dropbox-API-Arg": JSON.stringify({
         path,
         mode: "add",
@@ -92,8 +88,16 @@ export const uploadFile = async (
     body: buffer,
   });
 
+  const uploadData: any = await uploadRes.json();
+
+  // ❗ QUAN TRỌNG
+  if (!uploadRes.ok) {
+    console.error("❌ Dropbox upload error:", uploadData);
+    throw new Error(uploadData?.error_summary || "Upload failed");
+  }
+
   // 🔗 tạo link
-  let linkRes = await fetch(API_SHARE, {
+  const linkRes = await fetch(API_SHARE, {
     method: "POST",
     headers: getHeaders(),
     body: JSON.stringify({ path }),
@@ -119,6 +123,7 @@ export const uploadFile = async (
   }
 
   if (!data.url) {
+    console.error("❌ Share link error:", data);
     throw new Error("Failed to create shared link");
   }
 
@@ -136,7 +141,7 @@ export const uploadMultiple = async (
 
       const path = `/app/users/${userId}/${folder}/${Date.now()}_${file.originalname}`;
 
-      return uploadFile(file.buffer, path, file.mimetype);
+      return uploadFile(file.buffer, path);
     }),
   );
 };

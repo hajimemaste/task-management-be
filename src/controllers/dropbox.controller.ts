@@ -18,7 +18,7 @@ export const uploadSingle = async (req: Request, res: Response) => {
 
     const path = `/app/users/${userId}/${Date.now()}_${file.originalname}`;
 
-    const url = await uploadFile(file.buffer, path, file.mimetype);
+    const url = await uploadFile(file.buffer, path);
 
     res.json({ url });
   } catch (err) {
