@@ -1,3 +1,4 @@
+import { DropboxError } from "../utils/dropboxError";
 import { TreeNode } from "../interfaces/dropbox.interface";
 import fetch from "node-fetch";
 
@@ -54,7 +55,7 @@ export const createFolderService = async (path: string) => {
   }
 
   if (data.error) {
-    throw new Error("Create folder failed");
+    throw new DropboxError("Create folder failed", 500, data);
   }
 };
 
@@ -93,7 +94,12 @@ export const uploadFile = async (buffer: Buffer, path: string) => {
   // ❗ QUAN TRỌNG
   if (!uploadRes.ok) {
     console.error("❌ Dropbox upload error:", uploadData);
-    throw new Error(uploadData?.error_summary || "Upload failed");
+
+    throw new DropboxError(
+      "Upload file to Dropbox failed",
+      uploadRes.status,
+      uploadData,
+    );
   }
 
   // 🔗 tạo link
@@ -124,7 +130,8 @@ export const uploadFile = async (buffer: Buffer, path: string) => {
 
   if (!data.url) {
     console.error("❌ Share link error:", data);
-    throw new Error("Failed to create shared link");
+
+    throw new DropboxError("Create shared link failed", 500, data);
   }
 
   return data.url.replace("?dl=0", "?raw=1");
@@ -190,7 +197,7 @@ export const listAll = async (path: string) => {
   let data: any = await res.json();
 
   if (data.error) {
-    throw new Error("List folder failed");
+    throw new DropboxError("List folder failed", 500, data);
   }
 
   entries.push(...data.entries);
