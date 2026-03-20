@@ -8,22 +8,35 @@ import {
   createFolderService,
   getTreeService,
 } from "../services/dropbox.service";
+import { DropboxError } from "../utils/dropboxError";
 
 export const uploadSingle = async (req: Request, res: Response) => {
   try {
     const file = req.file;
     const userId = req.body.userId;
 
-    if (!file) return res.status(400).json({ message: "No file" });
+    if (!file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
 
     const path = `/app/users/${userId}/${Date.now()}_${file.originalname}`;
 
     const url = await uploadFile(file.buffer, path);
 
     res.json({ url });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Upload failed" });
+  } catch (err: any) {
+    console.error("🔥 ERROR:", err);
+
+    if (err instanceof DropboxError) {
+      return res.status(err.status).json({
+        message: err.message,
+        details: err.details,
+      });
+    }
+
+    res.status(500).json({
+      message: err.message || "Internal server error",
+    });
   }
 };
 
