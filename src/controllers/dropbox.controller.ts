@@ -13,44 +13,46 @@ import { DropboxError } from "../utils/dropboxError";
 export const uploadSingle = async (req: Request, res: Response) => {
   try {
     const file = req.file;
-    const userId = req.body.userId;
+    const path = req.body.path;
 
     if (!file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    const path = `/app/users/${userId}/${Date.now()}_${file.originalname}`;
+    if (!path) {
+      return res.status(400).json({ message: "Missing path" });
+    }
 
-    const url = await uploadFile(file.buffer, path);
+    const fullPath = `${path}/${Date.now()}_${file.originalname}`;
+
+    const url = await uploadFile(file.buffer, fullPath);
 
     res.json({ url });
   } catch (err: any) {
     console.error("🔥 ERROR:", err);
 
-    if (err instanceof DropboxError) {
-      return res.status(err.status).json({
-        message: err.message,
-        details: err.details,
-      });
-    }
-
-    res.status(500).json({
-      message: err.message || "Internal server error",
+    res.status(err.status || 500).json({
+      message: err.message,
+      details: err.details || null,
     });
   }
 };
 
 export const uploadMulti = async (req: Request, res: Response) => {
-  try {
-    const files = req.files as Express.Multer.File[];
-    const userId = req.body.userId;
+  const files = req.files as Express.Multer.File[];
+  const path = req.body.path;
 
-    const urls = await uploadMultiple(files, userId);
-
-    res.json({ urls });
-  } catch (err) {
-    res.status(500).json({ message: "Upload failed" });
+  if (!files?.length) {
+    return res.status(400).json({ message: "No files" });
   }
+
+  if (!path) {
+    return res.status(400).json({ message: "Missing path" });
+  }
+
+  const urls = await uploadMultiple(files, path);
+
+  res.json({ urls });
 };
 
 export const getFiles = async (req: Request, res: Response) => {
