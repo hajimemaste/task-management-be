@@ -140,15 +140,13 @@ export const uploadFile = async (buffer: Buffer, path: string) => {
 // 📤 Upload nhiều file
 export const uploadMultiple = async (
   files: Express.Multer.File[],
-  userId: string,
+  path: string,
 ) => {
   return Promise.all(
     files.map((file) => {
-      const folder = getFolderByMime(file.mimetype);
+      const fullPath = `${path}/${Date.now()}_${file.originalname}`;
 
-      const path = `/app/users/${userId}/${folder}/${Date.now()}_${file.originalname}`;
-
-      return uploadFile(file.buffer, path);
+      return uploadFile(file.buffer, fullPath);
     }),
   );
 };
