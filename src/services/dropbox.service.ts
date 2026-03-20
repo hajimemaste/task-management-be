@@ -263,5 +263,5 @@ export const buildTree = async (
 };
 
 export const getTreeService = async (path: string) => {
-  return buildTree(path, 2);
+  return buildTree(path, 1);
 };
