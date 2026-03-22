@@ -76,6 +76,11 @@ const userSchema = new Schema<IUser>(
       default: "user",
     },
 
+    fcmTokens: {
+      type: [String],
+      default: [],
+    },
+
     otp: {
       type: String,
     },

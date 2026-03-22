@@ -31,6 +31,7 @@ export interface IUser extends Document {
   rank?: string;
 
   role: UserRole;
+  fcmTokens?: string[];
 
   approvedBy?: string;
   approvedAt?: Date;
