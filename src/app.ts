@@ -3,8 +3,6 @@ import cors from "cors";
 import http from "http";
 import { initSocket } from "./socket";
 
-import { startTaskCron } from "./cron/task.cron";
-
 import authRoutes from "./routes/auth.route";
 import userRoutes from "./routes/user.route";
 import dropboxRoutes from "./routes/dropbox.route";
@@ -19,8 +17,6 @@ const server = http.createServer(app);
 
 app.use(cors());
 app.use(express.json());
-
-startTaskCron();
 
 initSocket(server);
 
@@ -41,9 +37,9 @@ app.use("/api/professional-cases", professionalCaseRoutes);
 // ✅ Autopsy
 app.use("/api/autopsy-cases", autopsyCaseRoutes);
 // ✅ Task
-app.use("/api/task", taskRoutes);
+app.use("/api/tasks", taskRoutes);
 
 // ❗ Global error handling middleware
 app.use(errorMiddleware);
 
-export default app;
+export { app, server };

@@ -9,17 +9,18 @@ export const initSocket = (server: any) => {
     },
   });
 
-  io.on("connection", (socket) => {
-    console.log("🔌 User connected:", socket.id);
+  console.log("🔥 Socket server initialized");
 
-    // join room theo userId
+  io.on("connection", (socket) => {
+    console.log(`🔌 Connected: ${socket.id}`);
+
     socket.on("join", (userId: string) => {
       socket.join(userId);
       console.log(`👤 User ${userId} joined room`);
     });
 
     socket.on("disconnect", () => {
-      console.log("❌ Disconnected:", socket.id);
+      console.log(`❌ Disconnected: ${socket.id}`);
     });
   });
 
@@ -27,8 +28,6 @@ export const initSocket = (server: any) => {
 };
 
 export const getIO = () => {
-  if (!io) {
-    throw new Error("Socket chưa được init");
-  }
+  if (!io) throw new Error("Socket chưa init");
   return io;
 };
