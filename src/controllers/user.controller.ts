@@ -4,6 +4,8 @@ import {
   getProfileService,
   getActiveUsersService,
   getUserProfileService,
+  saveFCMTokenService,
+  removeFCMTokenService,
 } from "../services/user.service";
 
 /**
@@ -92,4 +94,22 @@ export const getUserProfileController = async (
   } catch (error) {
     next(error);
   }
+};
+
+export const saveFCMToken = async (req: Request, res: Response) => {
+  const userId = req.user!.id.toString();
+  const { token } = req.body;
+
+  await saveFCMTokenService(userId, token);
+
+  res.json({ success: true });
+};
+
+export const removeFCMToken = async (req: Request, res: Response) => {
+  const userId = req.user!.id.toString();
+  const { token } = req.body;
+
+  await removeFCMTokenService(userId, token);
+
+  res.json({ success: true });
 };
