@@ -81,3 +81,33 @@ export const getUserProfileService = async (userId: string) => {
 
   return user;
 };
+
+export const saveFCMTokenService = async (userId: string, token: string) => {
+  if (!token) {
+    throw new Error("FCM token is required");
+  }
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  await User.updateMany({ fcmTokens: token }, { $pull: { fcmTokens: token } });
+
+  // 🔥 add nếu chưa có (tránh duplicate)
+  await User.findByIdAndUpdate(userId, {
+    $addToSet: { fcmTokens: token },
+  });
+
+  return true;
+};
+
+export const removeFCMTokenService = async (userId: string, token: string) => {
+  if (!token) return;
+
+  await User.findByIdAndUpdate(userId, {
+    $pull: { fcmTokens: token },
+  });
+
+  return true;
+};
