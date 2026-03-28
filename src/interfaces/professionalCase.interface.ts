@@ -29,6 +29,7 @@ export interface ICaseItem {
   caseType: CaseType;
 
   unit: string;
+  note: string;
 
   progress: CaseProgress;
 
