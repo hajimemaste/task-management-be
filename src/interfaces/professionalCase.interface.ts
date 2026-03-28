@@ -22,7 +22,7 @@ export interface ICaseItem {
 
   workDate: Date;
   content: string;
-  traces: string[];
+  traces: string;
 
   officers: ObjectId[];
 
