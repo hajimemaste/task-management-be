@@ -4,6 +4,7 @@ import { ICaseItem } from "../interfaces/professionalCase.interface";
 import { ApiError } from "../utils/ApiError";
 import { sendNotificationToMany } from "../services/notification.service";
 import ExcelJS from "exceljs";
+import { User } from "../models/user.model";
 
 // =======================
 // 🔹 1. Lấy hồ sơ theo ID
@@ -192,7 +193,15 @@ export const addCaseItem = async ({
     });
   }
 
-  return updatedDoc;
+  const newAddedItem =
+    updatedDoc.mainContent[updatedDoc.mainContent.length - 1];
+
+  await updatedDoc.populate({
+    path: "mainContent.officers",
+    select: "name",
+  });
+
+  return newAddedItem;
 };
 
 // =======================
@@ -260,6 +269,14 @@ export const updateCaseItem = async ({
     throw new ApiError(500, "Cập nhật thất bại");
   }
 
+  const updatedItem = updatedDoc.mainContent.find(
+    (item) => item._id?.toString() === itemId,
+  );
+
+  if (!updatedItem) {
+    throw new ApiError(500, "Không tìm thấy item sau update");
+  }
+
   // =======================
   // 🔔 5. Xử lý officers
   // =======================
@@ -290,7 +307,16 @@ export const updateCaseItem = async ({
     });
   }
 
-  return updatedDoc;
+  const officers = await User.find({
+    _id: { $in: updatedItem.officers },
+  }).select("name");
+
+  const populatedItem = {
+    ...updatedItem,
+    officers,
+  };
+
+  return populatedItem;
 };
 
 // =======================
@@ -415,94 +441,79 @@ export const filterCaseItems = async ({
 
   const itemMatch: any = {};
 
-  // =======================
-  // 🔍 KEYWORD SEARCH (multi field)
-  // =======================
-
+  // 🔍 KEYWORD
   if (keyword) {
     itemMatch.$or = [
-      {
-        "mainContent.content": {
-          $regex: keyword,
-          $options: "i",
-        },
-      },
-      {
-        "mainContent.traces": {
-          $regex: keyword,
-          $options: "i",
-        },
-      },
-      {
-        "mainContent.unit": {
-          $regex: keyword,
-          $options: "i",
-        },
-      },
+      { "mainContent.content": { $regex: keyword, $options: "i" } },
+      { "mainContent.traces": { $regex: keyword, $options: "i" } },
+      { "mainContent.unit": { $regex: keyword, $options: "i" } },
     ];
   }
 
-  // =======================
-  // 📌 CASE TYPE (list)
-  // =======================
-
+  // 📌 CASE TYPE
   if (caseTypes?.length) {
-    itemMatch["mainContent.caseType"] = {
-      $in: caseTypes,
-    };
+    itemMatch["mainContent.caseType"] = { $in: caseTypes };
   }
 
-  // =======================
-  // 📌 PROGRESS (list)
-  // =======================
-
+  // 📌 PROGRESS
   if (progressList?.length) {
-    itemMatch["mainContent.progress"] = {
-      $in: progressList,
-    };
+    itemMatch["mainContent.progress"] = { $in: progressList };
   }
 
-  // =======================
-  // 👤 OFFICERS (list)
-  // =======================
-
+  // 👤 OFFICERS
   if (officerIds?.length) {
     itemMatch["mainContent.officers"] = {
       $in: officerIds.map((id) => new Types.ObjectId(id)),
     };
   }
 
-  // =======================
-  // 📅 DATE RANGE
-  // =======================
-
+  // 📅 DATE
   if (fromDate || toDate) {
     itemMatch["mainContent.workDate"] = {};
-
-    if (fromDate) {
-      itemMatch["mainContent.workDate"].$gte = fromDate;
-    }
-
-    if (toDate) {
-      itemMatch["mainContent.workDate"].$lte = toDate;
-    }
+    if (fromDate) itemMatch["mainContent.workDate"].$gte = fromDate;
+    if (toDate) itemMatch["mainContent.workDate"].$lte = toDate;
   }
 
-  // =======================
   // 🖼 HAS IMAGES
-  // =======================
-
   if (typeof hasImages === "boolean") {
     itemMatch["mainContent.hasImages"] = hasImages;
   }
 
-  // =======================
-  // APPLY MATCH
-  // =======================
-
   if (Object.keys(itemMatch).length) {
     pipeline.push({ $match: itemMatch });
   }
+
+  // =======================
+  // 🔥 POPULATE officers bằng $lookup
+  // =======================
+
+  pipeline.push({
+    $lookup: {
+      from: "users", // ⚠️ tên collection
+      localField: "mainContent.officers",
+      foreignField: "_id",
+      as: "officerDocs",
+    },
+  });
+
+  // =======================
+  // 🔥 MAP lại officers chỉ lấy name
+  // =======================
+
+  pipeline.push({
+    $addFields: {
+      "mainContent.officers": {
+        $map: {
+          input: "$officerDocs",
+          as: "o",
+          in: {
+            _id: "$$o._id",
+            name: "$$o.name",
+          },
+        },
+      },
+    },
+  });
 
   // =======================
   // SORT
@@ -515,15 +526,12 @@ export const filterCaseItems = async ({
   });
 
   // =======================
-  // PROJECT (optional clean)
+  // 🔥 CHỈ TRẢ mainContent
   // =======================
 
   pipeline.push({
-    $project: {
-      caseMonth: 1,
-      caseYear: 1,
-      caseCode: 1,
-      mainContent: 1,
+    $replaceRoot: {
+      newRoot: "$mainContent",
     },
   });
 
