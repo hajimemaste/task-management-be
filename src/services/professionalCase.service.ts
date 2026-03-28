@@ -521,7 +521,7 @@ export const filterCaseItems = async ({
 
   pipeline.push({
     $sort: {
-      "mainContent.workDate": -1,
+      "mainContent.workDate": 1,
     },
   });
 
