@@ -6,7 +6,7 @@ const CaseItemSchema = new Schema(
     workDate: { type: Date, required: true },
 
     content: { type: String, required: true },
-    traces: { type: String },
+    traces: { type: String, default: "" },
 
     officers: [
       {
@@ -31,7 +31,7 @@ const CaseItemSchema = new Schema(
       required: true,
     },
 
-    unit: { type: String },
+    unit: { type: String, default: "" },
     note: { type: String, default: "" },
 
     progress: {

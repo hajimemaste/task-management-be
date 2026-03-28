@@ -22,7 +22,23 @@ const NotificationSchema = new Schema<INotification>(
 
     type: {
       type: String,
-      enum: ["TASK_ASSIGNED", "TASK_REMINDER", "TASK_OVERDUE", "SYSTEM"],
+      enum: [
+        "TASK_ASSIGNED",
+        "TASK_REMINDER",
+        "TASK_OVERDUE",
+        "SYSTEM",
+        "PROFESSIONAL_CREATED",
+        "PROFESSIONAL_UPDATED",
+        "PROFESSIONAL_DELETED",
+        "AUTOPSY_CREATED",
+        "AUTOPSY_UPDATED",
+        "AUTOPSY_DELETED",
+        "TASK_ACCEPTED",
+        "TASK_DONE",
+        "TASK_APPROVED",
+        "TASK_CANCELLED",
+        "TASK_NEED_APPROVAL",
+      ],
       required: true,
     },
 
