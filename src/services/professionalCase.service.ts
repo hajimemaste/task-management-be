@@ -317,9 +317,10 @@ export const updateCaseItem = async ({
   }));
 
   const populatedItem = {
-    ...updatedItem,
+    ...JSON.parse(JSON.stringify(updatedItem)),
     officers,
   };
+
   return populatedItem;
 };
 
