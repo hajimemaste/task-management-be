@@ -32,6 +32,7 @@ const CaseItemSchema = new Schema(
     },
 
     unit: { type: String },
+    note: { type: String, default: "" },
 
     progress: {
       type: String,
