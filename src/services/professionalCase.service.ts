@@ -307,15 +307,19 @@ export const updateCaseItem = async ({
     });
   }
 
-  const officers = await User.find({
+  const officersData = await User.find({
     _id: { $in: updatedItem.officers },
   }).select("name");
+
+  const officers = officersData.map((user) => ({
+    id: user._id.toString(),
+    name: user.name,
+  }));
 
   const populatedItem = {
     ...updatedItem,
     officers,
   };
-
   return populatedItem;
 };
 
