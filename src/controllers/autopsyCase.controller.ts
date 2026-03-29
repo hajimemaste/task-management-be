@@ -147,13 +147,17 @@ export const filterCaseItems = async (req: Request, res: Response) => {
 
     officerIds: officerIds ? (officerIds as string).split(",") : undefined,
 
-    form: form as string,
-    timeCategory: timeCategory as string,
+    form: form ? (form as string).split(",") : undefined,
+    timeCategory: timeCategory
+      ? (timeCategory as string).split(",")
+      : undefined,
 
     hasAssignment:
       hasAssignment !== undefined ? hasAssignment === "true" : undefined,
 
-    paymentStatus: paymentStatus as string,
+    paymentStatus: paymentStatus
+      ? (paymentStatus as string).split(",")
+      : undefined,
 
     fromDate: fromDate ? new Date(fromDate as string) : undefined,
     toDate: toDate ? new Date(toDate as string) : undefined,
