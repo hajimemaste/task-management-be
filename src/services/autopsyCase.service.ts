@@ -346,8 +346,17 @@ export const filterCaseItems = async ({
     ];
   }
 
-  if (form) itemMatch["mainContent.form"] = form;
-  if (timeCategory) itemMatch["mainContent.timeCategory"] = timeCategory;
+  if (form?.length) {
+    itemMatch["mainContent.form"] = { $in: form };
+  }
+
+  if (timeCategory?.length) {
+    itemMatch["mainContent.timeCategory"] = { $in: timeCategory };
+  }
+
+  if (paymentStatus?.length) {
+    itemMatch["mainContent.paymentStatus"] = { $in: paymentStatus };
+  }
 
   if (officerIds?.length) {
     itemMatch["mainContent.officers"] = {
@@ -357,10 +366,6 @@ export const filterCaseItems = async ({
 
   if (typeof hasAssignment === "boolean") {
     itemMatch["mainContent.hasAssignment"] = hasAssignment;
-  }
-
-  if (paymentStatus) {
-    itemMatch["mainContent.paymentStatus"] = paymentStatus;
   }
 
   if (fromDate || toDate) {
