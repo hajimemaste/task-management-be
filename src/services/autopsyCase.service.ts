@@ -4,6 +4,7 @@ import { IAutopsyItem } from "../interfaces/autopsyCase.interface";
 import { ApiError } from "../utils/ApiError";
 import { sendNotificationToMany } from "./notification.service";
 import ExcelJS from "exceljs";
+import { User } from "../models/user.model";
 
 // =======================
 // 🔹 1. Lấy hồ sơ theo ID
@@ -154,7 +155,15 @@ export const addCaseItem = async ({
     });
   }
 
-  return updatedDoc;
+  const newAddedItem =
+    updatedDoc.mainContent[updatedDoc.mainContent.length - 1];
+
+  await updatedDoc.populate({
+    path: "mainContent.officers",
+    select: "name",
+  });
+
+  return newAddedItem;
 };
 
 // =======================
@@ -200,11 +209,19 @@ export const updateCaseItem = async ({
     throw new ApiError(500, "Cập nhật thất bại");
   }
 
-  const officers = data.officers
+  const updatedItem = updatedDoc.mainContent.find(
+    (item) => item._id?.toString() === itemId,
+  );
+
+  if (!updatedItem) {
+    throw new ApiError(500, "Không tìm thấy item sau update");
+  }
+
+  const newOfficers = data.officers
     ? data.officers.map((id) => id.toString())
     : oldItem.officers.map((id) => id.toString());
 
-  const notifyUserIds = [...new Set(officers)].filter((id) => id !== userId);
+  const notifyUserIds = [...new Set(newOfficers)].filter((id) => id !== userId);
 
   if (notifyUserIds.length) {
     await sendNotificationToMany({
@@ -220,7 +237,21 @@ export const updateCaseItem = async ({
     });
   }
 
-  return updatedDoc;
+  const officersData = await User.find({
+    _id: { $in: updatedItem.officers },
+  }).select("name");
+
+  const officers = officersData.map((user) => ({
+    id: user._id.toString(),
+    name: user.name,
+  }));
+
+  const populatedItem = {
+    ...JSON.parse(JSON.stringify(updatedItem)),
+    officers,
+  };
+
+  return populatedItem;
 };
 
 // =======================
@@ -343,7 +374,37 @@ export const filterCaseItems = async ({
   }
 
   pipeline.push({
-    $sort: { "mainContent.executionDate": -1 },
+    $lookup: {
+      from: "users",
+      localField: "mainContent.officers",
+      foreignField: "_id",
+      as: "officerDocs",
+    },
+  });
+
+  pipeline.push({
+    $addFields: {
+      "mainContent.officers": {
+        $map: {
+          input: "$officerDocs",
+          as: "o",
+          in: {
+            _id: "$$o._id",
+            name: "$$o.name",
+          },
+        },
+      },
+    },
+  });
+
+  pipeline.push({
+    $sort: { "mainContent.executionDate": 1 },
+  });
+
+  pipeline.push({
+    $replaceRoot: {
+      newRoot: "$mainContent",
+    },
   });
 
   return AutopsyCase.aggregate(pipeline);
