@@ -62,7 +62,8 @@ export const createFolderService = async (path: string) => {
 // 🔥 đảm bảo folder tồn tại
 export const ensureFolder = async (path: string) => {
   try {
-    await createFolderService(path);
+    const safePath = path.startsWith("/") ? path : `/${path}`;
+    await createFolderService(safePath);
   } catch (err) {
     console.log("Folder exists or error:", err);
   }
@@ -73,7 +74,7 @@ export const uploadFile = async (buffer: Buffer, path: string) => {
   // 🔥 đảm bảo folder tồn tại
   const folderPath = path.substring(0, path.lastIndexOf("/"));
   await ensureFolder(folderPath);
-
+  const safePath = path.startsWith("/") ? path : `/${path}`;
   // 🚀 upload
   const uploadRes = await fetch(API_UPLOAD, {
     method: "POST",
@@ -81,7 +82,7 @@ export const uploadFile = async (buffer: Buffer, path: string) => {
       Authorization: `Bearer ${TOKEN}`,
       "Content-Type": "application/octet-stream",
       "Dropbox-API-Arg": JSON.stringify({
-        path,
+        safePath,
         mode: "add",
         autorename: true,
       }),
