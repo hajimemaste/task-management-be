@@ -308,3 +308,34 @@ export const filterTasks = async ({
 
   return Task.find(query).sort({ deadline: 1 });
 };
+
+// =======================
+// 🔹 9. Lấy chi tiết task
+// =======================
+
+export const getTaskDetail = async ({
+  taskId,
+  userId,
+}: {
+  taskId: string;
+  userId: string;
+}) => {
+  const task = await Task.findById(taskId)
+    .populate("assignments.userId", "name avatar")
+    .populate("createdBy", "name");
+
+  if (!task) {
+    throw new ApiError(404, "Task không tồn tại");
+  }
+
+  // 🔐 check quyền (admin hoặc người trong task)
+  const isAssigned = task.assignments.some(
+    (a) => a.userId.toString() === userId,
+  );
+
+  if (!isAssigned && task.createdBy.toString() !== userId) {
+    throw new ApiError(403, "Không có quyền xem task này");
+  }
+
+  return task;
+};
