@@ -101,7 +101,7 @@ export const cancelTask = async (req: Request, res: Response) => {
 
   const adminId = req.user!.id;
 
-  const data = await taskService.cancelTask({
+  const data = await taskService.deleteTask({
     taskId: rawTaskId,
     adminId,
   });
