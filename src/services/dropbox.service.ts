@@ -184,7 +184,6 @@ export const renameFile = async (from: string, to: string) => {
 };
 
 const getSharedLink = async (path: string) => {
-  // 👉 thử lấy link có sẵn
   const listRes = await fetch(API_LIST_LINK, {
     method: "POST",
     headers: getHeaders(),
@@ -194,10 +193,9 @@ const getSharedLink = async (path: string) => {
   const listData: any = await listRes.json();
 
   if (listData.links?.length) {
-    return listData.links[0].url.replace("?dl=0", "?raw=1");
+    return normalizeDropboxUrl(listData.links[0].url);
   }
 
-  // 👉 nếu chưa có thì tạo mới
   const createRes = await fetch(API_SHARE, {
     method: "POST",
     headers: getHeaders(),
@@ -210,7 +208,7 @@ const getSharedLink = async (path: string) => {
     throw new DropboxError("Create shared link failed", 500, createData);
   }
 
-  return createData.url.replace("?dl=0", "?raw=1");
+  return normalizeDropboxUrl(createData.url);
 };
 
 const getMimeType = (name: string) => {
@@ -227,6 +225,10 @@ const getMimeType = (name: string) => {
   if (["ppt", "pptx"].includes(ext)) return "ppt";
 
   return "file";
+};
+
+const normalizeDropboxUrl = (url: string) => {
+  return url.replace("?dl=0", "?raw=1").replace("&dl=0", "&raw=1");
 };
 
 export const listAll = async (path: string) => {
