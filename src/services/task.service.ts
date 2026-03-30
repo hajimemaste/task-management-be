@@ -230,29 +230,34 @@ export const approveTask = async ({ taskId, adminId }: any) => {
 // 🔹 5. Huỷ task
 // =======================
 
-export const cancelTask = async ({ taskId, adminId }: any) => {
+export const deleteTask = async ({ taskId, adminId }: any) => {
   const task = await Task.findById(taskId);
 
   if (!task) throw new ApiError(404, "Task không tồn tại");
 
-  task.status = "CANCELLED";
-  task.cancelledAt = new Date();
-
-  await task.save();
+  // ❌ chỉ cho xoá khi đang làm
+  if (task.status !== "ACTIVE") {
+    throw new ApiError(400, "Chỉ được xoá nhiệm vụ đang thực hiện");
+  }
 
   const userIds = task.assignments.map((a) => a.userId.toString());
 
-  emitToUsers(userIds, "task:cancelled", { taskId });
+  // 👉 xoá thật
+  await Task.deleteOne({ _id: taskId });
 
+  // 🔥 realtime
+  emitToUsers(userIds, "task:deleted", { taskId });
+
+  // 🔔 notification
   await sendNotificationToMany({
     userIds,
-    title: "Task đã bị huỷ",
+    title: "Nhiệm vụ đã bị xoá",
     body: task.title,
-    type: "TASK_CANCELLED",
+    type: "SYSTEM", // 👈 type system
     data: { taskId },
   });
 
-  return task;
+  return { success: true };
 };
 
 // =======================
