@@ -148,3 +148,22 @@ export const filterTasks = async (req: Request, res: Response) => {
 
   res.json({ success: true, data });
 };
+
+export const getTaskDetailController = async (req: any, res: any) => {
+  try {
+    const userId = req.user!.id.toString();
+
+    const { taskId } = req.params;
+
+    const task = await taskService.getTaskDetail({ taskId, userId });
+
+    res.json({
+      success: true,
+      data: task,
+    });
+  } catch (err: any) {
+    res.status(err.status || 500).json({
+      message: err.message,
+    });
+  }
+};
