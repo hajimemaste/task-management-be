@@ -277,3 +277,28 @@ export const buildTree = async (
 export const getTreeService = async (path: string) => {
   return buildTree(path, 1);
 };
+
+export const deleteFolder = async (path: string) => {
+  if (!path) return;
+
+  const safePath = path.startsWith("/") ? path : `/${path}`;
+
+  const res = await fetch(API_DELETE, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify({ path: safePath }),
+  });
+
+  const data: any = await res.json();
+
+  // 👉 nếu folder không tồn tại → bỏ qua luôn (tránh crash)
+  if (data.error?.[".tag"] === "path_lookup") {
+    console.log("⚠️ Folder không tồn tại:", safePath);
+    return;
+  }
+
+  if (!res.ok) {
+    console.error("❌ Delete folder error:", data);
+    throw new DropboxError("Delete folder failed", 500, data);
+  }
+};

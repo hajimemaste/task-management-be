@@ -3,7 +3,7 @@ import { Task } from "../models/task.model";
 import { ApiError } from "../utils/ApiError";
 import { sendNotificationToMany } from "./notification.service";
 import { emitToUsers } from "../helpers/socket.helper";
-
+import { deleteFolder } from "./dropbox.service";
 // =======================
 // 🔹 1. Tạo task (Admin)
 // =======================
@@ -235,14 +235,23 @@ export const deleteTask = async ({ taskId, adminId }: any) => {
 
   if (!task) throw new ApiError(404, "Task không tồn tại");
 
-  // ❌ chỉ cho xoá khi đang làm
   if (task.status !== "ACTIVE") {
     throw new ApiError(400, "Chỉ được xoá nhiệm vụ đang thực hiện");
   }
 
   const userIds = task.assignments.map((a) => a.userId.toString());
 
-  // 👉 xoá thật
+  // 🔥 xoá folder Dropbox trước (nếu có)
+  try {
+    if (task.attachments) {
+      await deleteFolder(task.attachments);
+    }
+  } catch (err) {
+    console.error("❌ Xoá folder Dropbox lỗi:", err);
+    // 👉 không throw để không block xoá task
+  }
+
+  // 👉 xoá DB
   await Task.deleteOne({ _id: taskId });
 
   // 🔥 realtime
@@ -253,7 +262,7 @@ export const deleteTask = async ({ taskId, adminId }: any) => {
     userIds,
     title: "Nhiệm vụ đã bị xoá",
     body: task.title,
-    type: "SYSTEM", // 👈 type system
+    type: "SYSTEM",
     data: { taskId },
   });
 
