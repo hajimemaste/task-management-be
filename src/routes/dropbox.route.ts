@@ -7,7 +7,6 @@ import {
   removeFile,
   rename,
   createFolder,
-  getTree,
   getListAll,
 } from "../controllers/dropbox.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
@@ -62,8 +61,6 @@ router.delete("/delete", authMiddleware, removeFile);
 
 // ✏️ rename file
 router.put("/rename", authMiddleware, rename);
-
-router.post("/tree", authMiddleware, getTree);
 
 router.post("/all", authMiddleware, getListAll);
 
