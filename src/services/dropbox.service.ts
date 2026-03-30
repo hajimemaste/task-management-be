@@ -184,15 +184,30 @@ export const renameFile = async (from: string, to: string) => {
 };
 
 export const listAll = async (path: string) => {
+  if (!path) return [];
+
   let entries: any[] = [];
 
-  let res = await fetch(API_LIST, {
+  const res = await fetch(API_LIST, {
     method: "POST",
     headers: getHeaders(),
     body: JSON.stringify({ path }),
   });
 
-  let data: any = await res.json();
+  const text = await res.text();
+
+  let data: any;
+
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error("Invalid Dropbox response: " + text);
+  }
+
+  // 🔥 FIX: folder chưa tồn tại → trả []
+  if (data.error?.error_summary?.includes("path/not_found")) {
+    return [];
+  }
 
   if (data.error) {
     throw new DropboxError("List folder failed", 500, data);
@@ -200,7 +215,6 @@ export const listAll = async (path: string) => {
 
   entries.push(...data.entries);
 
-  // 🔥 handle has_more
   while (data.has_more) {
     const res2 = await fetch(API_LIST_CONTINUE, {
       method: "POST",
