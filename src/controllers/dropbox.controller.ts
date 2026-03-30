@@ -74,13 +74,13 @@ export const rename = async (req: Request, res: Response) => {
 
 export const createFolder = async (req: Request, res: Response) => {
   try {
-    const { userId, folderName } = req.body;
+    const { folderName } = req.body;
 
-    if (!userId || !folderName) {
+    if (!folderName) {
       return res.status(400).json({ message: "Missing data" });
     }
 
-    const path = `/app/users/${userId}/${folderName}`;
+    const path = `/app/${folderName}`;
 
     const result = await createFolderService(path);
 

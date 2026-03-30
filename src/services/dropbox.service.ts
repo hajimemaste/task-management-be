@@ -89,7 +89,16 @@ export const uploadFile = async (buffer: Buffer, path: string) => {
     body: buffer,
   });
 
-  const uploadData: any = await uploadRes.json();
+  const uploadText = await uploadRes.text();
+
+  let uploadData: any;
+
+  try {
+    uploadData = JSON.parse(uploadText);
+  } catch {
+    console.error("❌ RAW Dropbox upload error:", uploadText);
+    throw new Error(uploadText);
+  }
 
   // ❗ QUAN TRỌNG
   if (!uploadRes.ok) {
