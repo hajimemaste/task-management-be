@@ -7,8 +7,8 @@ import {
   renameFile,
   createFolderService,
   getTreeService,
+  listAll,
 } from "../services/dropbox.service";
-import { DropboxError } from "../utils/dropboxError";
 
 export const uploadSingle = async (req: Request, res: Response) => {
   try {
@@ -103,5 +103,20 @@ export const getTree = async (req: Request, res: Response) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Get tree failed" });
+  }
+};
+
+export const getListAll = async (req: Request, res: Response) => {
+  try {
+    const { path } = req.body;
+
+    const rootPath = path || "";
+
+    const tree = await listAll(rootPath);
+
+    res.json(tree);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Get File failed" });
   }
 };
