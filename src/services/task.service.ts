@@ -21,6 +21,29 @@ export const createTask = async ({
     throw new ApiError(400, "Phải chọn ít nhất 1 người");
   }
 
+  if (!title || !title.trim()) {
+    throw new ApiError(400, "Tên nhiệm vụ không được để trống");
+  }
+
+  const cleanTitle = title.trim();
+
+  if (cleanTitle.length < 3) {
+    throw new ApiError(400, "Tên nhiệm vụ phải ít nhất 3 ký tự");
+  }
+
+  if (cleanTitle.length > 200) {
+    throw new ApiError(400, "Tên nhiệm vụ tối đa 200 ký tự");
+  }
+
+  const existed = await Task.findOne({
+    title: { $regex: `^${cleanTitle}$`, $options: "i" },
+    createdBy: adminId,
+  });
+
+  if (existed) {
+    throw new ApiError(400, "Tên nhiệm vụ đã tồn tại");
+  }
+
   const assignments = userIds.map((id: string) => ({
     userId: new Types.ObjectId(id),
     status: "PENDING",
