@@ -82,7 +82,7 @@ export const uploadFile = async (buffer: Buffer, path: string) => {
       Authorization: `Bearer ${TOKEN}`,
       "Content-Type": "application/octet-stream",
       "Dropbox-API-Arg": JSON.stringify({
-        safePath,
+        path: safePath,
         mode: "add",
         autorename: true,
       }),
