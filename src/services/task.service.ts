@@ -313,6 +313,13 @@ export const filterTasks = async ({
 // 🔹 9. Lấy chi tiết task
 // =======================
 
+const getId = (val: any) => {
+  if (!val) return "";
+  if (typeof val === "string") return val;
+  if (val._id) return val._id.toString();
+  return val.toString();
+};
+
 export const getTaskDetail = async ({
   taskId,
   userId,
@@ -328,12 +335,11 @@ export const getTaskDetail = async ({
     throw new ApiError(404, "Task không tồn tại");
   }
 
-  // 🔐 check quyền (admin hoặc người trong task)
-  const isAssigned = task.assignments.some(
-    (a) => a.userId.toString() === userId,
-  );
+  const isAssigned = task.assignments.some((a) => getId(a.userId) === userId);
 
-  if (!isAssigned && task.createdBy.toString() !== userId) {
+  const isOwner = getId(task.createdBy) === userId;
+
+  if (!isAssigned && !isOwner) {
     throw new ApiError(403, "Không có quyền xem task này");
   }
 
