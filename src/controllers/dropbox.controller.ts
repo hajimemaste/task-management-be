@@ -6,7 +6,6 @@ import {
   listFiles,
   renameFile,
   createFolderService,
-  getTreeService,
   listAll,
 } from "../services/dropbox.service";
 
@@ -88,21 +87,6 @@ export const createFolder = async (req: Request, res: Response) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Create folder failed" });
-  }
-};
-
-export const getTree = async (req: Request, res: Response) => {
-  try {
-    const { path } = req.body;
-
-    const rootPath = path || "";
-
-    const tree = await getTreeService(rootPath);
-
-    res.json(tree);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Get tree failed" });
   }
 };
 

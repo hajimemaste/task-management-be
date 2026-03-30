@@ -183,6 +183,52 @@ export const renameFile = async (from: string, to: string) => {
   });
 };
 
+const getSharedLink = async (path: string) => {
+  // 👉 thử lấy link có sẵn
+  const listRes = await fetch(API_LIST_LINK, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify({ path, direct_only: true }),
+  });
+
+  const listData: any = await listRes.json();
+
+  if (listData.links?.length) {
+    return listData.links[0].url.replace("?dl=0", "?raw=1");
+  }
+
+  // 👉 nếu chưa có thì tạo mới
+  const createRes = await fetch(API_SHARE, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify({ path }),
+  });
+
+  const createData: any = await createRes.json();
+
+  if (!createData.url) {
+    throw new DropboxError("Create shared link failed", 500, createData);
+  }
+
+  return createData.url.replace("?dl=0", "?raw=1");
+};
+
+const getMimeType = (name: string) => {
+  const ext = name.split(".").pop()?.toLowerCase();
+
+  if (!ext) return "file";
+
+  if (["png", "jpg", "jpeg", "gif", "webp"].includes(ext)) return "image";
+  if (["mp4", "mov", "avi", "mkv"].includes(ext)) return "video";
+  if (["mp3", "wav", "ogg"].includes(ext)) return "audio";
+  if (["pdf"].includes(ext)) return "pdf";
+  if (["doc", "docx"].includes(ext)) return "word";
+  if (["xls", "xlsx"].includes(ext)) return "excel";
+  if (["ppt", "pptx"].includes(ext)) return "ppt";
+
+  return "file";
+};
+
 export const listAll = async (path: string) => {
   if (!path) return [];
 
@@ -204,7 +250,7 @@ export const listAll = async (path: string) => {
     throw new Error("Invalid Dropbox response: " + text);
   }
 
-  // 🔥 FIX: folder chưa tồn tại → trả []
+  // 👉 folder chưa tồn tại
   if (data.error?.error_summary?.includes("path/not_found")) {
     return [];
   }
@@ -231,51 +277,27 @@ export const listAll = async (path: string) => {
     entries.push(...data.entries);
   }
 
-  return entries;
-};
+  // =========================
+  // 🔥 MAP sang format FE cần
+  // =========================
 
-export const buildTree = async (
-  path: string,
-  depth = 2, // 🔥 limit để tránh lag
-): Promise<TreeNode> => {
-  const name = path.split("/").pop() || "root";
+  const files = await Promise.all(
+    entries
+      .filter((e) => e[".tag"] === "file")
+      .map(async (f) => {
+        const url = await getSharedLink(f.path_lower);
 
-  // 👉 nếu depth = 0 → stop recursion
-  if (depth === 0) {
-    return {
-      name,
-      path,
-      folders: [],
-      files: [],
-    };
-  }
-
-  const entries = await listAll(path);
-
-  const folders = entries.filter((e) => e[".tag"] === "folder");
-  const files = entries.filter((e) => e[".tag"] === "file");
-
-  // 🔥 build folder children (recursive)
-  const children = await Promise.all(
-    folders.map((folder) => buildTree(folder.path_lower, depth - 1)),
+        return {
+          name: f.name,
+          path: f.path_lower,
+          size: f.size,
+          mimeType: getMimeType(f.name),
+          url,
+        };
+      }),
   );
 
-  return {
-    name,
-    path,
-
-    folders: children,
-
-    files: files.map((f) => ({
-      name: f.name,
-      path: f.path_lower,
-      size: f.size,
-    })),
-  };
-};
-
-export const getTreeService = async (path: string) => {
-  return buildTree(path, 1);
+  return files;
 };
 
 export const deleteFolder = async (path: string) => {
