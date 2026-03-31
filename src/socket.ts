@@ -14,10 +14,12 @@ export const initSocket = (server: any) => {
   io.on("connection", (socket) => {
     console.log(`🔌 Connected: ${socket.id}`);
 
-    socket.on("join", (userId: string) => {
+    const userId = socket.handshake.auth?.userId;
+
+    if (userId) {
       socket.join(userId);
-      console.log(`👤 User ${userId} joined room`);
-    });
+      console.log(`👤 Auto join room: ${userId}`);
+    }
 
     socket.on("disconnect", () => {
       console.log(`❌ Disconnected: ${socket.id}`);
