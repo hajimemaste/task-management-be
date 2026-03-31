@@ -151,6 +151,9 @@ export const addCaseItem = async ({
       data: {
         caseId: doc._id.toString(),
         type: "AUTOPSY_CREATED",
+        name: doc.caseCode.toString(),
+        month: doc.caseMonth.toString(),
+        year: doc.caseYear.toString(),
       },
     });
   }
@@ -232,6 +235,9 @@ export const updateCaseItem = async ({
       data: {
         caseId: doc._id.toString(),
         type: "AUTOPSY_UPDATED",
+        name: doc.caseCode.toString(),
+        month: doc.caseMonth.toString(),
+        year: doc.caseYear.toString(),
       },
     });
   }
@@ -305,6 +311,9 @@ export const deleteCaseItem = async ({
       data: {
         caseId: doc._id.toString(),
         type: "AUTOPSY_DELETED",
+        name: doc.caseCode.toString(),
+        month: doc.caseMonth.toString(),
+        year: doc.caseYear.toString(),
       },
     });
   }
