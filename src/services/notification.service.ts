@@ -64,24 +64,47 @@ const sendPushToTokens = async ({
   const batches = chunkArray(tokens, 500);
 
   for (const batch of batches) {
-    const res = await admin.messaging().sendMulticast({
-      tokens: batch,
-      notification: {
-        title,
-        body,
-      },
-      data,
-    });
+    try {
+      const res = await admin.messaging().sendMulticast({
+        tokens: batch,
+        notification: {
+          title,
+          body,
+        },
+        data,
+      });
 
-    const invalidTokens: string[] = [];
+      const invalidTokens: string[] = [];
 
-    res.responses.forEach((r, idx) => {
-      if (!r.success) {
-        invalidTokens.push(batch[idx]);
+      res.responses.forEach((r, idx) => {
+        if (!r.success) {
+          console.warn("❌ FCM lỗi:", r.error?.message);
+          invalidTokens.push(batch[idx]);
+        }
+      });
+
+      // 🔥 remove token lỗi
+      if (invalidTokens.length) {
+        await removeInvalidTokens(invalidTokens);
       }
-    });
+    } catch (err: any) {
+      // 💥 QUAN TRỌNG: KHÔNG throw
+      console.error("❌ sendMulticast crash:", err?.message);
 
-    await removeInvalidTokens(invalidTokens);
+      // 👉 fallback: gửi từng token để không mất hết
+      for (const token of batch) {
+        try {
+          await admin.messaging().send({
+            token,
+            notification: { title, body },
+            data,
+          });
+        } catch (e: any) {
+          console.warn("❌ token fail:", token);
+          await removeInvalidTokens([token]);
+        }
+      }
+    }
   }
 };
 
