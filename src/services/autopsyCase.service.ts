@@ -149,7 +149,7 @@ export const addCaseItem = async ({
       body: data.summary || "Bạn được thêm vào hồ sơ khám nghiệm",
       type: "AUTOPSY_CREATED",
       data: {
-        caseId: updatedDoc._id.toString(),
+        caseId: doc._id.toString(),
         type: "AUTOPSY_CREATED",
       },
     });
@@ -230,8 +230,7 @@ export const updateCaseItem = async ({
       body: data.summary || oldItem.summary || "Đã có chỉnh sửa",
       type: "AUTOPSY_UPDATED",
       data: {
-        caseItemId: itemId,
-        caseId: updatedDoc._id.toString(),
+        caseId: doc._id.toString(),
         type: "AUTOPSY_UPDATED",
       },
     });
@@ -304,8 +303,7 @@ export const deleteCaseItem = async ({
       body: oldItem.summary || "Một hồ sơ đã bị xoá",
       type: "AUTOPSY_DELETED",
       data: {
-        caseItemId: itemId,
-        caseId: updatedDoc._id.toString(),
+        caseId: doc._id.toString(),
         type: "AUTOPSY_DELETED",
       },
     });

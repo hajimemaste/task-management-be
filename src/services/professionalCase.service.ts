@@ -187,7 +187,7 @@ export const addCaseItem = async ({
       body: data.content || "Bạn được thêm vào hồ sơ mới",
       type: "PROFESSIONAL_CREATED",
       data: {
-        caseId: updatedDoc.toString(),
+        caseId: doc._id.toString(),
         type: "PROFESSIONAL_CREATED",
       },
     });
@@ -300,8 +300,7 @@ export const updateCaseItem = async ({
       body: data.content || oldItem.content || "Hồ sơ đã được chỉnh sửa",
       type: "PROFESSIONAL_UPDATED",
       data: {
-        caseItemId: itemId,
-        caseId: updatedDoc._id.toString(),
+        caseId: doc._id.toString(),
         type: "PROFESSIONAL_UPDATED",
       },
     });
@@ -399,8 +398,7 @@ export const deleteCaseItem = async ({
       body: oldItem.content || "Một hồ sơ đã bị xoá",
       type: "PROFESSIONAL_DELETED",
       data: {
-        caseItemId: itemId,
-        caseId: updatedDoc._id.toString(),
+        caseId: doc._id.toString(),
         type: "PROFESSIONAL_DELETED",
       },
     });
