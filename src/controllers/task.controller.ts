@@ -113,27 +113,19 @@ export const cancelTask = async (req: Request, res: Response) => {
 // 🔹 6. Lấy task của tôi
 // =======================
 
-export const getMyTasks = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const getMyTasks = async (req: Request, res: Response) => {
   try {
-    console.log("🔥 HIT getMyTasks");
-
     console.log("👉 req.user:", req.user);
 
-    const userId = req.user?.id?.toString();
-
-    console.log("👉 userId:", userId);
+    const userId = req.user?.id;
 
     if (!userId) {
       return res.status(401).json({
-        message: "Unauthorized - missing user",
+        message: "Unauthorized",
       });
     }
 
-    const data = await taskService.getMyTasks(userId);
+    const data = await taskService.getMyTasks(userId.toString());
 
     res.json({ success: true, data });
   } catch (err) {
@@ -141,6 +133,7 @@ export const getMyTasks = async (
     throw err;
   }
 };
+
 // =======================
 // 🔹 7. Admin lấy tất cả
 // =======================
