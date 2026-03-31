@@ -2,7 +2,6 @@ import { Types } from "mongoose";
 import { Task } from "../models/task.model";
 import { ApiError } from "../utils/ApiError";
 import { sendNotificationToMany } from "./notification.service";
-import { emitToUsers } from "../helpers/socket.helper";
 import { deleteFolder, renameFolderService } from "./dropbox.service";
 // =======================
 // 🔹 1. Tạo task (Admin)
@@ -59,11 +58,6 @@ export const createTask = async ({
     createdBy: adminId,
   });
 
-  emitToUsers(userIds, "task:assigned", {
-    taskId: task._id,
-    title: task.title,
-  });
-
   // 🔔 notify user
   await sendNotificationToMany({
     userIds,
@@ -106,11 +100,6 @@ export const acceptTask = async ({
   assignment.acceptedAt = new Date();
 
   await task.save();
-
-  emitToUsers([task.createdBy.toString()], "task:accepted", {
-    taskId,
-    userId,
-  });
 
   // =======================
   // 🔔 Notify Admin
@@ -175,10 +164,6 @@ export const completeTaskByUser = async ({
 
   await task.save();
 
-  emitToUsers([task.createdBy.toString()], "task:completed", {
-    taskId,
-  });
-
   // =======================
   // 🔔 notify admin
   // =======================
@@ -217,12 +202,6 @@ export const approveTask = async ({ taskId, adminId }: any) => {
 
   await task.save();
 
-  emitToUsers(
-    task.assignments.map((a) => a.userId.toString()),
-    "task:approved",
-    { taskId },
-  );
-
   return task;
 };
 
@@ -253,9 +232,6 @@ export const deleteTask = async ({ taskId, adminId }: any) => {
 
   // 👉 xoá DB
   await Task.deleteOne({ _id: taskId });
-
-  // 🔥 realtime
-  emitToUsers(userIds, "task:deleted", { taskId });
 
   // 🔔 notification
   await sendNotificationToMany({
@@ -504,10 +480,6 @@ export const updateTask = async ({
   // 🔥 5. REALTIME
   // =======================
   const allUserIds = task.assignments.map((a) => a.userId.toString());
-
-  emitToUsers(allUserIds, "task:updated", {
-    taskId: task._id,
-  });
 
   // =======================
   // 🔔 6. NOTIFY USER

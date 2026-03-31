@@ -2,7 +2,8 @@ import admin from "firebase-admin";
 import { Notification } from "../models/notification.model";
 import { User } from "../models/user.model";
 import { NotificationType } from "interfaces/notification.interface";
-
+import { emitToUsers } from "../helpers/socket.helper";
+import { Types } from "mongoose";
 // =======================
 // TYPES
 // =======================
@@ -154,8 +155,10 @@ export const sendNotificationToMany = async ({
   const users = await User.find({ _id: { $in: userIds } });
   if (!users.length) return;
 
-  // lưu DB bulk
-  await Notification.insertMany(
+  // =======================
+  // 🔹 1. LƯU DB
+  // =======================
+  const notifications = await Notification.insertMany(
     users.map((u) => ({
       userId: u._id,
       title,
@@ -165,6 +168,42 @@ export const sendNotificationToMany = async ({
     })),
   );
 
+  const userIdStrings = userIds.map((id) => id.toString());
+
+  // =======================
+  // 🔥 2. REALTIME - LIST
+  // =======================
+  emitToUsers(userIdStrings, "notification:new", {
+    notifications,
+  });
+
+  // =======================
+  // 🔥 3. REALTIME - BADGE
+  // =======================
+  const unreadCounts = await Notification.aggregate([
+    {
+      $match: {
+        userId: { $in: userIds.map((id) => new Types.ObjectId(id)) },
+        isRead: false,
+      },
+    },
+    {
+      $group: {
+        _id: "$userId",
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  unreadCounts.forEach((u) => {
+    emitToUsers([u._id.toString()], "notification:unread", {
+      count: u.count,
+    });
+  });
+
+  // =======================
+  // 🔹 4. FCM (CUỐI CÙNG)
+  // =======================
   const tokens = users.flatMap((u) => u.fcmTokens || []);
 
   await sendPushToTokens({
