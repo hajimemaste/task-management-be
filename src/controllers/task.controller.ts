@@ -115,17 +115,17 @@ export const cancelTask = async (req: Request, res: Response) => {
 
 export const getMyTasks = async (req: Request, res: Response) => {
   try {
-    console.log("👉 req.user:", req.user);
+    const { userId } = req.body;
 
-    const userId = req.user?.id;
+    console.log("👉 userId từ body:", userId);
 
     if (!userId) {
-      return res.status(401).json({
-        message: "Unauthorized",
+      return res.status(400).json({
+        message: "Thiếu userId",
       });
     }
 
-    const data = await taskService.getMyTasks(userId.toString());
+    const data = await taskService.getMyTasks(userId);
 
     res.json({ success: true, data });
   } catch (err) {
