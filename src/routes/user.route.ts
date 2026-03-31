@@ -30,6 +30,6 @@ router.get(
 );
 
 router.post("/fcm-token", authMiddleware, userController.saveFCMToken);
-router.delete("/fcm-token", userController.removeFCMToken);
+router.delete("/fcm-token", authMiddleware, userController.removeFCMToken);
 
 export default router;
