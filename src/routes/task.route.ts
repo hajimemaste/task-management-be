@@ -15,11 +15,11 @@ router.get("/filter", authMiddleware, taskController.filterTasks);
 // 🔹 USER
 // =======================
 
-// Chi tiết nhiệm vụ
-router.get("/:taskId", authMiddleware, taskController.getTaskDetailController);
-
 // lấy task của mình
 router.get("/me", authMiddleware, taskController.getMyTasks);
+
+// Chi tiết nhiệm vụ
+router.get("/:taskId", authMiddleware, taskController.getTaskDetailController);
 
 // nhận task
 router.patch("/:taskId/accept", authMiddleware, taskController.acceptTask);
