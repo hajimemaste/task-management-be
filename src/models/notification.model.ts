@@ -38,6 +38,7 @@ const NotificationSchema = new Schema<INotification>(
         "TASK_APPROVED",
         "TASK_CANCELLED",
         "TASK_NEED_APPROVAL",
+        "TASK_UPDATED",
       ],
       required: true,
     },
