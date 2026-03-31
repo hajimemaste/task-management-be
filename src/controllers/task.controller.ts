@@ -113,7 +113,11 @@ export const cancelTask = async (req: Request, res: Response) => {
 // 🔹 6. Lấy task của tôi
 // =======================
 
-export const getMyTasks = async (req: Request, res: Response) => {
+export const getMyTasks = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     console.log("🔥 HIT getMyTasks");
 
