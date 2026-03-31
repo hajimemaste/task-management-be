@@ -114,24 +114,11 @@ export const cancelTask = async (req: Request, res: Response) => {
 // =======================
 
 export const getMyTasks = async (req: Request, res: Response) => {
-  try {
-    const { userId } = req.body;
+  const userId = req.user!.id.toString();
 
-    console.log("👉 userId từ body:", userId);
+  const data = await taskService.getMyTasks(userId);
 
-    if (!userId) {
-      return res.status(400).json({
-        message: "Thiếu userId",
-      });
-    }
-
-    const data = await taskService.getMyTasks(userId);
-
-    res.json({ success: true, data });
-  } catch (err) {
-    console.error("❌ getMyTasks error:", err);
-    throw err;
-  }
+  res.json({ success: true, data });
 };
 
 // =======================
