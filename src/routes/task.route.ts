@@ -1,9 +1,9 @@
-import { Router } from "express";
+import express from "express";
 import * as taskController from "../controllers/task.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { requireAdmin } from "../middlewares/requireAdmin.middleware";
 
-const router = Router();
+const router = express.Router();
 
 // =======================
 // 🔹 FILTER (đặt trước)
