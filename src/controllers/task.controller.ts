@@ -114,13 +114,29 @@ export const cancelTask = async (req: Request, res: Response) => {
 // =======================
 
 export const getMyTasks = async (req: Request, res: Response) => {
-  const userId = req.user!.id.toString();
-  console.log("👉 userId:", userId);
-  const data = await taskService.getMyTasks(userId);
+  try {
+    console.log("🔥 HIT getMyTasks");
 
-  res.json({ success: true, data });
+    console.log("👉 req.user:", req.user);
+
+    const userId = req.user?.id?.toString();
+
+    console.log("👉 userId:", userId);
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized - missing user",
+      });
+    }
+
+    const data = await taskService.getMyTasks(userId);
+
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error("❌ getMyTasks error:", err);
+    throw err;
+  }
 };
-
 // =======================
 // 🔹 7. Admin lấy tất cả
 // =======================
