@@ -124,7 +124,6 @@ export const acceptTask = async ({
     data: {
       taskId: task._id.toString(),
       type: "TASK_ACCEPTED",
-      acceptedBy: userId,
     },
   });
 
