@@ -176,7 +176,8 @@ export const updateTaskController = async (
   try {
     const { taskId } = req.params;
 
-    const { title, description, category, deadline, userIds } = req.body;
+    const { title, description, category, deadline, attachments, userIds } =
+      req.body;
 
     const adminId = req.user?.id.toString();
 
@@ -187,6 +188,7 @@ export const updateTaskController = async (
       description,
       category,
       deadline,
+      attachments,
       userIds,
     });
 
