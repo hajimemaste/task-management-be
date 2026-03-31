@@ -326,3 +326,47 @@ export const deleteFolder = async (path: string) => {
     throw new DropboxError("Delete folder failed", 500, data);
   }
 };
+
+export const renameFolderService = async (fromPath: string, toPath: string) => {
+  if (!fromPath || !toPath) return;
+
+  // 👉 normalize path
+  const from = fromPath.startsWith("/") ? fromPath : `/${fromPath}`;
+  const to = toPath.startsWith("/") ? toPath : `/${toPath}`;
+
+  // 👉 nếu giống nhau thì skip
+  if (from === to) return;
+
+  const res = await fetch(API_MOVE, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify({
+      from_path: from,
+      to_path: to,
+      autorename: false,
+    }),
+  });
+
+  const data: any = await res.json();
+
+  // ❗ nếu folder không tồn tại → bỏ qua (không crash)
+  if (data.error?.[".tag"] === "from_lookup") {
+    console.warn("⚠️ Folder không tồn tại:", from);
+    return;
+  }
+
+  // ❗ nếu trùng tên → báo lỗi rõ ràng
+  if (
+    data.error?.[".tag"] === "to" &&
+    data.error?.to?.[".tag"] === "conflict"
+  ) {
+    throw new DropboxError("Folder đích đã tồn tại", 400, data);
+  }
+
+  if (!res.ok) {
+    console.error("❌ Rename folder error:", data);
+    throw new DropboxError("Rename folder failed", res.status, data);
+  }
+
+  return true;
+};
