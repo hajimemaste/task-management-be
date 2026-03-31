@@ -274,9 +274,38 @@ export const deleteTask = async ({ taskId, adminId }: any) => {
 // =======================
 
 export const getMyTasks = async (userId: string) => {
-  return Task.find({
-    "assignments.userId": new Types.ObjectId(userId),
-  }).sort({ createdAt: -1 });
+  const tasks = await Task.aggregate([
+    // 👉 filter theo user
+    {
+      $match: {
+        "assignments.userId": new Types.ObjectId(userId),
+      },
+    },
+
+    // 👉 thêm priority
+    {
+      $addFields: {
+        priority: {
+          $cond: [{ $eq: ["$status", "ACTIVE"] }, 0, 1],
+        },
+      },
+    },
+
+    // 👉 sort
+    {
+      $sort: {
+        priority: 1, // ACTIVE lên trước
+        deadline: 1, // ACTIVE → deadline
+        updatedAt: -1, // others → updatedAt
+      },
+    },
+  ]);
+
+  // 👉 populate lại user
+  return Task.populate(tasks, {
+    path: "assignments.userId",
+    select: "name",
+  });
 };
 
 // =======================
@@ -284,11 +313,28 @@ export const getMyTasks = async (userId: string) => {
 // =======================
 
 export const getAllTasks = async () => {
-  return Task.find()
-    .sort({ createdAt: -1 })
-    .populate("assignments.userId", "name");
-};
+  const tasks = await Task.aggregate([
+    {
+      $addFields: {
+        priority: {
+          $cond: [{ $eq: ["$status", "ACTIVE"] }, 0, 1],
+        },
+      },
+    },
+    {
+      $sort: {
+        priority: 1,
+        deadline: 1,
+        updatedAt: -1,
+      },
+    },
+  ]);
 
+  return Task.populate(tasks, {
+    path: "assignments.userId",
+    select: "name",
+  });
+};
 // =======================
 // 🔹 8. Filter (admin)
 // =======================
