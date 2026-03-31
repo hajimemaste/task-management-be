@@ -274,11 +274,18 @@ export const deleteTask = async ({ taskId, adminId }: any) => {
 // =======================
 
 export const getMyTasks = async (userId: string) => {
+  if (!Types.ObjectId.isValid(userId)) {
+    throw new Error("Invalid userId");
+  }
+
   return Task.find({
-    "assignments.userId": new Types.ObjectId(userId),
+    assignments: {
+      $elemMatch: {
+        userId: new Types.ObjectId(userId),
+      },
+    },
   }).sort({ createdAt: -1 });
 };
-
 // =======================
 // 🔹 7. Admin lấy tất cả
 // =======================
