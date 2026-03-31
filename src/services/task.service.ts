@@ -433,12 +433,18 @@ export const updateTask = async ({
   // 🔥 4. HANDLE ASSIGNMENTS
   // =======================
 
-  const currentUserIds = task.assignments.map((a) => a.userId.toString());
+  const incomingSet = new Set(userIds);
 
-  const existingSet = new Set(currentUserIds);
+  // 🔥 1. REMOVE user không còn trong list
+  task.assignments = task.assignments.filter((a) =>
+    incomingSet.has(a.userId.toString()),
+  );
+
+  // 🔥 2. ADD user mới
+  const currentIds = task.assignments.map((a) => a.userId.toString());
 
   const newAssignments = userIds
-    .filter((id: string) => !existingSet.has(id))
+    .filter((id: string) => !currentIds.includes(id))
     .map((id: string) => ({
       userId: new Types.ObjectId(id),
       status: "PENDING",
