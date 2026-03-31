@@ -196,6 +196,8 @@ export const sendNotificationToMany = async ({
   ]);
 
   unreadCounts.forEach((u) => {
+    console.log("🚀 EMIT:", u._id.toString(), u.count);
+
     emitToUsers([u._id.toString()], "notification:unread", {
       count: u.count,
     });
