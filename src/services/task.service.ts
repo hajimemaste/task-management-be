@@ -3,7 +3,7 @@ import { Task } from "../models/task.model";
 import { ApiError } from "../utils/ApiError";
 import { sendNotificationToMany } from "./notification.service";
 import { emitToUsers } from "../helpers/socket.helper";
-import { deleteFolder } from "./dropbox.service";
+import { deleteFolder, renameFolderService } from "./dropbox.service";
 // =======================
 // 🔹 1. Tạo task (Admin)
 // =======================
@@ -351,6 +351,125 @@ export const getTaskDetail = async ({
   if (!isAssigned && !isOwner) {
     throw new ApiError(403, "Không có quyền xem task này");
   }
+
+  return task;
+};
+
+// =======================
+// 🔹 10. Cập nhật task
+// =======================
+
+export const updateTask = async ({
+  taskId,
+  adminId,
+  title,
+  description,
+  category,
+  deadline,
+  attachments,
+  userIds,
+}: any) => {
+  const task = await Task.findById(taskId);
+
+  if (!task) throw new ApiError(404, "Task không tồn tại");
+
+  // =======================
+  // 🔥 1. VALIDATE
+  // =======================
+  if (task.status !== "ACTIVE") {
+    throw new ApiError(400, "Nhiệm vụ không được này không được cập nhật");
+  }
+
+  if (!title || !title.trim()) {
+    throw new ApiError(400, "Tên nhiệm vụ không được để trống");
+  }
+
+  if (!userIds?.length) {
+    throw new ApiError(400, "Phải chọn ít nhất 1 người");
+  }
+
+  const cleanTitle = title.trim();
+
+  if (cleanTitle.length < 3) {
+    throw new ApiError(400, "Tên nhiệm vụ phải ít nhất 3 ký tự");
+  }
+
+  if (cleanTitle.length > 200) {
+    throw new ApiError(400, "Tên nhiệm vụ tối đa 200 ký tự");
+  }
+
+  const existed = await Task.findOne({
+    _id: { $ne: taskId },
+    title: { $regex: `^${cleanTitle}$`, $options: "i" },
+    createdBy: adminId,
+  });
+
+  if (existed) {
+    throw new ApiError(400, "Tên nhiệm vụ đã tồn tại");
+  }
+
+  // =======================
+  // 🔥 2. RENAME FOLDER (nếu attachments đổi)
+  // =======================
+  if (attachments && task.attachments && attachments !== task.attachments) {
+    try {
+      await renameFolderService(task.attachments, attachments);
+    } catch (err) {
+      console.error("❌ Rename folder lỗi:", err);
+      throw new ApiError(500, "Không thể đổi tên thư mục");
+    }
+  }
+
+  // =======================
+  // 🔥 3. UPDATE BASIC INFO
+  // =======================
+  task.title = title;
+  task.description = description;
+  task.category = category;
+  task.deadline = deadline;
+  task.attachments = attachments;
+
+  // =======================
+  // 🔥 4. HANDLE ASSIGNMENTS
+  // =======================
+
+  const currentUserIds = task.assignments.map((a) => a.userId.toString());
+
+  const existingSet = new Set(currentUserIds);
+
+  const newAssignments = userIds
+    .filter((id: string) => !existingSet.has(id))
+    .map((id: string) => ({
+      userId: new Types.ObjectId(id),
+      status: "PENDING",
+    }));
+
+  task.assignments.push(...newAssignments);
+
+  await task.save();
+
+  // =======================
+  // 🔥 5. REALTIME
+  // =======================
+  const allUserIds = task.assignments.map((a) => a.userId.toString());
+
+  emitToUsers(allUserIds, "task:updated", {
+    taskId: task._id,
+  });
+
+  // =======================
+  // 🔔 6. NOTIFY USER
+  // =======================
+  await sendNotificationToMany({
+    userIds: allUserIds,
+    title: "Nhiệm vụ đã được cập nhật",
+    body: task.title,
+    type: "TASK_UPDATED",
+    data: {
+      taskId: task._id.toString(),
+      type: "TASK_UPDATED",
+    },
+  });
 
   return task;
 };

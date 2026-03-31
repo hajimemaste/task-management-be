@@ -14,7 +14,8 @@ export type NotificationType =
   | "TASK_APPROVED"
   | "TASK_CANCELLED"
   | "TASK_NEED_APPROVAL"
-  | "TASK_REMINDER";
+  | "TASK_REMINDER"
+  | "TASK_UPDATED";
 
 export interface INotification extends Document {
   userId: ObjectId;

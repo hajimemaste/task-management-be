@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import * as taskService from "../services/task.service";
 import { ApiError } from "../utils/ApiError";
 
@@ -165,5 +165,37 @@ export const getTaskDetailController = async (req: any, res: any) => {
     res.status(err.status || 500).json({
       message: err.message,
     });
+  }
+};
+
+export const updateTaskController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { taskId } = req.params;
+
+    const { title, description, category, deadline, userIds } = req.body;
+
+    const adminId = req.user?.id.toString();
+
+    const task = await taskService.updateTask({
+      taskId,
+      adminId,
+      title,
+      description,
+      category,
+      deadline,
+      userIds,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Cập nhật nhiệm vụ thành công",
+      data: task,
+    });
+  } catch (error) {
+    next(error);
   }
 };

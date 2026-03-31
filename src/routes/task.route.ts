@@ -53,4 +53,12 @@ router.patch(
   taskController.cancelTask,
 );
 
+// Cập nhật task
+router.put(
+  "/:taskId",
+  authMiddleware,
+  requireAdmin,
+  taskController.updateTaskController,
+);
+
 export default router;
