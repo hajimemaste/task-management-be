@@ -189,6 +189,9 @@ export const addCaseItem = async ({
       data: {
         caseId: doc._id.toString(),
         type: "PROFESSIONAL_CREATED",
+        name: doc.caseCode.toString(),
+        month: doc.caseMonth.toString(),
+        year: doc.caseYear.toString(),
       },
     });
   }
@@ -302,6 +305,9 @@ export const updateCaseItem = async ({
       data: {
         caseId: doc._id.toString(),
         type: "PROFESSIONAL_UPDATED",
+        name: doc.caseCode.toString(),
+        month: doc.caseMonth.toString(),
+        year: doc.caseYear.toString(),
       },
     });
   }
@@ -400,6 +406,9 @@ export const deleteCaseItem = async ({
       data: {
         caseId: doc._id.toString(),
         type: "PROFESSIONAL_DELETED",
+        name: doc.caseCode.toString(),
+        month: doc.caseMonth.toString(),
+        year: doc.caseYear.toString(),
       },
     });
   }
