@@ -216,7 +216,7 @@ export const getFullStatisticsAggregate = async () => {
 
       tongQuan: {
         thamGiaVuViec: caseData.thamGiaVuViec || 0,
-        tongHoSo: caseData.tongHoSo || 0, // 🔥 ALL
+        tongHoSo: caseData.tongHoSo || 0,
         hoanThanhHoSo: taskData.hoanThanhHoSo || 0,
         thamMuuVanBan: 0,
         treHan: taskData.treHan || 0,
