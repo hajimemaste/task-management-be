@@ -44,4 +44,10 @@ router.get(
   userController.getMyCompletedTasksController,
 );
 
+router.get(
+  "/users/:userId/completed-tasks",
+  authMiddleware,
+  userController.getCompletedTasksByUserController,
+);
+
 export default router;
