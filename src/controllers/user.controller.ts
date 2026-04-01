@@ -9,6 +9,7 @@ import {
   getFullStatisticsAggregate,
   getMyCompletedTasks,
   getUserCompletedTasks,
+  getDashboardData,
 } from "../services/user.service";
 
 /**
@@ -183,6 +184,26 @@ export const getCompletedTasksByUserController = async (
     res.status(err.status || 500).json({
       success: false,
       message: err.message || "Get tasks failed",
+    });
+  }
+};
+
+export const getDashboardController = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id.toString();
+
+    const data = await getDashboardData(userId);
+
+    res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (err) {
+    console.error("❌ Dashboard error:", err);
+
+    res.status(500).json({
+      success: false,
+      message: "Get dashboard failed",
     });
   }
 };
