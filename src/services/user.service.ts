@@ -259,7 +259,7 @@ export const getUserCompletedTasks = async (userId: string) => {
   return tasks;
 };
 
-export const getDashboardData = async (userId: string) => {
+export const getDashboardData = async (userId: string, role: string) => {
   const now = new Date();
 
   const startOfDay = new Date();
@@ -268,30 +268,37 @@ export const getDashboardData = async (userId: string) => {
   const endOfDay = new Date();
   endOfDay.setHours(23, 59, 59, 999);
 
+  const isAdmin = role === "admin";
+
   // =====================
   // 👤 USER
   // =====================
   const user = await User.findById(userId).select("name").lean();
 
   // =====================
+  // 🔥 FILTER CHUNG
+  // =====================
+  const taskFilter = isAdmin
+    ? {}
+    : { "assignments.userId": new Types.ObjectId(userId) };
+
+  // =====================
   // 📊 STATS
   // =====================
-  const totalTask = await Task.countDocuments({
-    "assignments.userId": userId,
-  });
+  const totalTask = await Task.countDocuments(taskFilter);
 
   const completedTask = await Task.countDocuments({
-    "assignments.userId": userId,
+    ...taskFilter,
     status: "COMPLETED",
   });
 
   const pendingTask = await Task.countDocuments({
-    "assignments.userId": userId,
+    ...taskFilter,
     status: { $ne: "COMPLETED" },
   });
 
   const overdueTask = await Task.countDocuments({
-    "assignments.userId": userId,
+    ...taskFilter,
     status: { $ne: "COMPLETED" },
     deadline: { $lt: now },
   });
@@ -300,19 +307,20 @@ export const getDashboardData = async (userId: string) => {
   // 🔥 URGENT TASKS
   // =====================
   const urgentTasks = await Task.find({
-    "assignments.userId": new Types.ObjectId(userId),
+    ...taskFilter,
     status: { $ne: "COMPLETED" },
   })
     .sort({ deadline: 1 })
     .limit(5)
-    .select("title deadline status")
+    .select("title deadline status assignments")
+    .populate("assignments.userId", "name") // 🔥 admin cần biết ai
     .lean();
 
   // =====================
   // 📅 TASK HÔM NAY
   // =====================
   const todayTasks = await Task.countDocuments({
-    "assignments.userId": userId,
+    ...taskFilter,
     deadline: { $gte: startOfDay, $lte: endOfDay },
     status: { $ne: "COMPLETED" },
   });
@@ -320,22 +328,27 @@ export const getDashboardData = async (userId: string) => {
   // =====================
   // 🔔 NOTIFICATIONS
   // =====================
-  const notifications = await Notification.find({
-    userId,
-  })
-    .sort({ createdAt: -1 })
-    .limit(5)
-    .select("title type createdAt isRead data")
-    .lean();
+  const notifications = isAdmin
+    ? await Notification.find({})
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .select("title type createdAt isRead data userId")
+        .populate("userId", "name") // 🔥 biết ai bị
+        .lean()
+    : await Notification.find({ userId })
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .select("title type createdAt isRead data")
+        .lean();
 
   // =====================
   // 📈 CHART (7 ngày)
   // =====================
   const last7Days = await Task.aggregate([
     {
-      $match: {
-        "assignments.userId": new Types.ObjectId(userId),
-      },
+      $match: isAdmin
+        ? {}
+        : { "assignments.userId": new Types.ObjectId(userId) },
     },
     {
       $group: {
@@ -353,6 +366,7 @@ export const getDashboardData = async (userId: string) => {
   return {
     user: {
       name: user?.name || "",
+      role,
     },
 
     todayTasks,
