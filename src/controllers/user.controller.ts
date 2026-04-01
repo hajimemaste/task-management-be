@@ -6,6 +6,7 @@ import {
   getUserProfileService,
   saveFCMTokenService,
   removeFCMTokenService,
+  getFullStatisticsAggregate,
 } from "../services/user.service";
 
 /**
@@ -112,4 +113,28 @@ export const removeFCMToken = async (req: Request, res: Response) => {
   await removeFCMTokenService(userId, token);
 
   res.json({ success: true });
+};
+
+// =========================
+// 🔥 GET FULL STATISTICS
+// =========================
+export const getFullStatisticsController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const data = await getFullStatisticsAggregate();
+
+    res.status(200).json({
+      success: true,
+      ...data,
+    });
+  } catch (err: any) {
+    console.error("❌ Get statistics error:", err);
+
+    res.status(err.status || 500).json({
+      success: false,
+      message: err.message || "Get statistics failed",
+    });
+  }
 };
