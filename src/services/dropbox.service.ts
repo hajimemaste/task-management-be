@@ -400,7 +400,7 @@ export const renameFolderService = async (fromPath: string, toPath: string) => {
 };
 
 export const refreshAccessToken = async () => {
-  const res = await fetchWithRetry("https://api.dropbox.com/oauth2/token", {
+  const res = await fetch("https://api.dropbox.com/oauth2/token", {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -416,6 +416,7 @@ export const refreshAccessToken = async () => {
   const data: any = await res.json();
 
   if (!data.access_token) {
+    console.error("❌ Refresh token error:", data);
     throw new Error("Refresh token failed");
   }
 
