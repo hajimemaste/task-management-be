@@ -50,4 +50,7 @@ router.get(
   userController.getCompletedTasksByUserController,
 );
 
+// routes/dashboard.route.ts
+router.get("/dashboard", authMiddleware, userController.getDashboardController);
+
 export default router;

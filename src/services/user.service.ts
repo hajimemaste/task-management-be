@@ -4,6 +4,7 @@ import { deleteFile } from "../utils/firebase.utils";
 import { ProfessionalCase } from "../models/professionalCase.model";
 import { Task } from "../models/task.model";
 import { Types } from "mongoose";
+import { Notification } from "../models/notification.model";
 
 export const updateProfileService = async (
   userId: string,
@@ -256,4 +257,117 @@ export const getUserCompletedTasks = async (userId: string) => {
     .lean();
 
   return tasks;
+};
+
+export const getDashboardData = async (userId: string) => {
+  const now = new Date();
+
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+
+  // =====================
+  // 👤 USER
+  // =====================
+  const user = await User.findById(userId).select("name").lean();
+
+  // =====================
+  // 📊 STATS
+  // =====================
+  const totalTask = await Task.countDocuments({
+    "assignments.userId": userId,
+  });
+
+  const completedTask = await Task.countDocuments({
+    "assignments.userId": userId,
+    status: "COMPLETED",
+  });
+
+  const pendingTask = await Task.countDocuments({
+    "assignments.userId": userId,
+    status: { $ne: "COMPLETED" },
+  });
+
+  const overdueTask = await Task.countDocuments({
+    "assignments.userId": userId,
+    status: { $ne: "COMPLETED" },
+    deadline: { $lt: now },
+  });
+
+  // =====================
+  // 🔥 URGENT TASKS
+  // =====================
+  const urgentTasks = await Task.find({
+    "assignments.userId": new Types.ObjectId(userId),
+    status: { $ne: "COMPLETED" },
+  })
+    .sort({ deadline: 1 })
+    .limit(5)
+    .select("title deadline status")
+    .lean();
+
+  // =====================
+  // 📅 TASK HÔM NAY
+  // =====================
+  const todayTasks = await Task.countDocuments({
+    "assignments.userId": userId,
+    deadline: { $gte: startOfDay, $lte: endOfDay },
+    status: { $ne: "COMPLETED" },
+  });
+
+  // =====================
+  // 🔔 NOTIFICATIONS
+  // =====================
+  const notifications = await Notification.find({
+    userId,
+  })
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .select("title type createdAt isRead data")
+    .lean();
+
+  // =====================
+  // 📈 CHART (7 ngày)
+  // =====================
+  const last7Days = await Task.aggregate([
+    {
+      $match: {
+        "assignments.userId": new Types.ObjectId(userId),
+      },
+    },
+    {
+      $group: {
+        _id: {
+          $dateToString: { format: "%d/%m", date: "$createdAt" },
+        },
+        count: { $sum: 1 },
+      },
+    },
+    {
+      $sort: { _id: 1 },
+    },
+  ]);
+
+  return {
+    user: {
+      name: user?.name || "",
+    },
+
+    todayTasks,
+
+    stats: {
+      totalTask,
+      completedTask,
+      pendingTask,
+      overdueTask,
+    },
+
+    urgentTasks,
+
+    notifications,
+
+    chart: last7Days,
+  };
 };
