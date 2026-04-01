@@ -75,7 +75,7 @@ router.patch(
 
 // disable user
 router.patch(
-  "/admin/users/:userId/disable",
+  "/admin/users/:id/disable",
   authMiddleware,
   requireAdmin,
   authController.disableUserController,
@@ -83,7 +83,7 @@ router.patch(
 
 // enable user
 router.patch(
-  "/admin/users/:userId/enable",
+  "/admin/users/:id/enable",
   authMiddleware,
   requireAdmin,
   authController.enableUserController,
