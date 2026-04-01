@@ -7,6 +7,7 @@ import {
   saveFCMTokenService,
   removeFCMTokenService,
   getFullStatisticsAggregate,
+  getMyCompletedTasks,
 } from "../services/user.service";
 
 /**
@@ -135,6 +136,29 @@ export const getFullStatisticsController = async (
     res.status(err.status || 500).json({
       success: false,
       message: err.message || "Get statistics failed",
+    });
+  }
+};
+
+export const getMyCompletedTasksController = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const userId = req.user!.id.toString();
+
+    const tasks = await getMyCompletedTasks(userId);
+
+    res.status(200).json({
+      success: true,
+      data: tasks,
+    });
+  } catch (err: any) {
+    console.error("❌ Get completed tasks error:", err);
+
+    res.status(500).json({
+      success: false,
+      message: err.message || "Get completed tasks failed",
     });
   }
 };
