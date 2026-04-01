@@ -163,6 +163,19 @@ export const filterCaseItems = async (req: Request, res: Response) => {
 // =======================
 // 🔹 8. Filter
 // =======================
-export const exportProfessional = async (req: Request, res: Response) => {
-  await caseService.exportProfessionalExcel(res);
+export const exportProfessionalExcel = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ message: "Thiếu id" });
+    }
+
+    await caseService.exportProfessionalExcel(id.toString(), res);
+  } catch (error: any) {
+    console.error(error);
+    res.status(500).json({
+      message: error.message || "Export thất bại",
+    });
+  }
 };

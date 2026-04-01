@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { ProfessionalCase } from "../models/professionalCase.model";
 import { ICaseItem } from "../interfaces/professionalCase.interface";
 import { ApiError } from "../utils/ApiError";
@@ -554,47 +554,70 @@ export const filterCaseItems = async ({
 // 🔹 9. Xuất excel
 // =======================
 
-export const exportProfessionalExcel = async (res: any) => {
-  const cases = await ProfessionalCase.find().lean();
+export const exportProfessionalExcel = async (id: string, res: any) => {
+  // validate ObjectId
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new Error("ID không hợp lệ");
+  }
+
+  const caseItem = await ProfessionalCase.findById(id).lean();
+
+  if (!caseItem) {
+    throw new Error("Không tìm thấy hồ sơ");
+  }
 
   const workbook = new ExcelJS.Workbook();
 
-  for (const caseItem of cases) {
-    const sheetName = `${caseItem.caseMonth}-${caseItem.caseYear}`;
-    const sheet = workbook.addWorksheet(sheetName);
+  const sheetName = `${caseItem.caseMonth}-${caseItem.caseYear}`;
+  const sheet = workbook.addWorksheet(sheetName);
 
-    // Header
-    sheet.columns = [
-      { header: "STT", key: "stt", width: 6 },
-      { header: "Ngày làm", key: "workDate", width: 15 },
-      { header: "Nội dung vụ việc", key: "content", width: 30 },
-      { header: "Dấu vết", key: "traces", width: 25 },
-      { header: "Cán bộ thực hiện", key: "officers", width: 25 },
-      { header: "Ghi chú", key: "note", width: 25 },
-      { header: "Loại vụ việc", key: "caseType", width: 15 },
-      { header: "Đơn vị thụ lý", key: "unit", width: 20 },
-      { header: "Tiến độ", key: "progress", width: 25 },
-      { header: "Số ảnh", key: "imageCount", width: 10 },
-      { header: "Có ảnh", key: "hasImages", width: 10 },
-    ];
+  // Header
+  sheet.columns = [
+    { header: "STT", key: "stt", width: 6 },
+    { header: "Ngày làm", key: "workDate", width: 15 },
+    { header: "Nội dung vụ việc", key: "content", width: 30 },
+    { header: "Dấu vết", key: "traces", width: 25 },
+    { header: "Cán bộ thực hiện", key: "officers", width: 25 },
+    { header: "Ghi chú", key: "note", width: 25 },
+    { header: "Loại vụ việc", key: "caseType", width: 15 },
+    { header: "Đơn vị thụ lý", key: "unit", width: 20 },
+    { header: "Tiến độ", key: "progress", width: 25 },
+    { header: "Số ảnh", key: "imageCount", width: 10 },
+    { header: "Có ảnh", key: "hasImages", width: 10 },
+  ];
 
-    caseItem.mainContent.forEach((item: any, index: number) => {
-      sheet.addRow({
-        stt: index + 1,
-        workDate: item.workDate?.toISOString().split("T")[0],
-        content: item.content,
-        traces: item.traces,
-        officers: item.officers?.join(", "),
-        note: item.note,
-        caseType: item.caseType,
-        unit: item.unit,
-        progress: item.progress,
-        imageCount: item.imageCount || 0,
-        hasImages: item.hasImages ? "Có" : "Không",
-      });
+  // Style header (xịn hơn 👇)
+  sheet.getRow(1).font = { bold: true };
+  sheet.getRow(1).alignment = { vertical: "middle", horizontal: "center" };
+
+  // Data
+  caseItem.mainContent.forEach((item: any, index: number) => {
+    sheet.addRow({
+      stt: index + 1,
+      workDate: item.workDate
+        ? new Date(item.workDate).toISOString().split("T")[0]
+        : "",
+      content: item.content,
+      traces: item.traces,
+      officers: item.officers?.join(", "),
+      note: item.note,
+      caseType: item.caseType,
+      unit: item.unit,
+      progress: item.progress,
+      imageCount: item.imageCount || 0,
+      hasImages: item.hasImages ? "Có" : "Không",
     });
-  }
+  });
 
+  // Auto wrap text
+  sheet.eachRow((row) => {
+    row.alignment = { vertical: "middle", wrapText: true };
+  });
+
+  // Freeze header
+  sheet.views = [{ state: "frozen", ySplit: 1 }];
+
+  // Response
   res.setHeader(
     "Content-Type",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -602,7 +625,7 @@ export const exportProfessionalExcel = async (res: any) => {
 
   res.setHeader(
     "Content-Disposition",
-    "attachment; filename=professional.xlsx",
+    `attachment; filename=case-${caseItem.caseMonth}-${caseItem.caseYear}.xlsx`,
   );
 
   await workbook.xlsx.write(res);
