@@ -2,12 +2,6 @@ import { DropboxError } from "../utils/dropboxError";
 import { TreeNode } from "../interfaces/dropbox.interface";
 import fetch from "node-fetch";
 
-const TOKEN = process.env.DROPBOX_TOKEN!;
-
-if (!TOKEN) {
-  throw new Error("Missing DROPBOX_TOKEN");
-}
-
 const API_UPLOAD = "https://content.dropboxapi.com/2/files/upload";
 const API_SHARE =
   "https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings";
@@ -19,11 +13,14 @@ const API_CREATE_FOLDER = "https://api.dropboxapi.com/2/files/create_folder_v2";
 const API_LIST_CONTINUE =
   "https://api.dropboxapi.com/2/files/list_folder/continue";
 
-const getHeaders = () => ({
-  Authorization: `Bearer ${TOKEN}`,
-  "Content-Type": "application/json",
-});
+const getHeaders = async () => {
+  const token = await getAccessToken();
 
+  return {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
+};
 // 🔥 phân loại folder theo file
 const getFolderByMime = (mimetype: string) => {
   if (mimetype.startsWith("image/")) return "images";
@@ -35,9 +32,9 @@ const getFolderByMime = (mimetype: string) => {
 
 // 🔥 tạo folder
 export const createFolderService = async (path: string) => {
-  const res = await fetch(API_CREATE_FOLDER, {
+  const res = await fetchWithRetry(API_CREATE_FOLDER, {
     method: "POST",
-    headers: getHeaders(),
+    headers: await getHeaders(),
     body: JSON.stringify({
       path,
       autorename: false,
@@ -75,10 +72,12 @@ export const uploadFile = async (buffer: Buffer, path: string) => {
   await ensureFolder(folderPath);
 
   // 🚀 upload
-  const uploadRes = await fetch(API_UPLOAD, {
+  const token = await getAccessToken();
+
+  const uploadRes = await fetchWithRetry(API_UPLOAD, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${TOKEN}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/octet-stream",
       "Dropbox-API-Arg": JSON.stringify({
         path,
@@ -103,9 +102,9 @@ export const uploadFile = async (buffer: Buffer, path: string) => {
   }
 
   // 🔗 tạo link
-  const linkRes = await fetch(API_SHARE, {
+  const linkRes = await fetchWithRetry(API_SHARE, {
     method: "POST",
-    headers: getHeaders(),
+    headers: await getHeaders(),
     body: JSON.stringify({ path }),
   });
 
@@ -113,9 +112,9 @@ export const uploadFile = async (buffer: Buffer, path: string) => {
 
   // 🔥 nếu link đã tồn tại
   if (data.error?.[".tag"] === "shared_link_already_exists") {
-    const listRes = await fetch(API_LIST_LINK, {
+    const listRes = await fetchWithRetry(API_LIST_LINK, {
       method: "POST",
-      headers: getHeaders(),
+      headers: await getHeaders(),
       body: JSON.stringify({ path, direct_only: true }),
     });
 
@@ -153,9 +152,9 @@ export const uploadMultiple = async (
 
 // 📥 List file
 export const listFiles = async (folder: string) => {
-  const res = await fetch(API_LIST, {
+  const res = await fetchWithRetry(API_LIST, {
     method: "POST",
-    headers: getHeaders(),
+    headers: await getHeaders(),
     body: JSON.stringify({ path: folder }),
   });
 
@@ -164,18 +163,18 @@ export const listFiles = async (folder: string) => {
 
 // ❌ Delete
 export const deleteFile = async (path: string) => {
-  await fetch(API_DELETE, {
+  await fetchWithRetry(API_DELETE, {
     method: "POST",
-    headers: getHeaders(),
+    headers: await getHeaders(),
     body: JSON.stringify({ path }),
   });
 };
 
 // ✏️ Rename / Move
 export const renameFile = async (from: string, to: string) => {
-  await fetch(API_MOVE, {
+  await fetchWithRetry(API_MOVE, {
     method: "POST",
-    headers: getHeaders(),
+    headers: await getHeaders(),
     body: JSON.stringify({
       from_path: from,
       to_path: to,
@@ -184,9 +183,9 @@ export const renameFile = async (from: string, to: string) => {
 };
 
 const getSharedLink = async (path: string) => {
-  const listRes = await fetch(API_LIST_LINK, {
+  const listRes = await fetchWithRetry(API_LIST_LINK, {
     method: "POST",
-    headers: getHeaders(),
+    headers: await getHeaders(),
     body: JSON.stringify({ path, direct_only: true }),
   });
 
@@ -196,9 +195,9 @@ const getSharedLink = async (path: string) => {
     return normalizeDropboxUrl(listData.links[0].url);
   }
 
-  const createRes = await fetch(API_SHARE, {
+  const createRes = await fetchWithRetry(API_SHARE, {
     method: "POST",
-    headers: getHeaders(),
+    headers: await getHeaders(),
     body: JSON.stringify({ path }),
   });
 
@@ -236,9 +235,9 @@ export const listAll = async (path: string) => {
 
   let entries: any[] = [];
 
-  const res = await fetch(API_LIST, {
+  const res = await fetchWithRetry(API_LIST, {
     method: "POST",
-    headers: getHeaders(),
+    headers: await getHeaders(),
     body: JSON.stringify({ path }),
   });
 
@@ -264,9 +263,9 @@ export const listAll = async (path: string) => {
   entries.push(...data.entries);
 
   while (data.has_more) {
-    const res2 = await fetch(API_LIST_CONTINUE, {
+    const res2 = await fetchWithRetry(API_LIST_CONTINUE, {
       method: "POST",
-      headers: getHeaders(),
+      headers: await getHeaders(),
       body: JSON.stringify({ cursor: data.cursor }),
     });
 
@@ -307,9 +306,9 @@ export const deleteFolder = async (path: string) => {
 
   const safePath = path.startsWith("/") ? path : `/${path}`;
 
-  const res = await fetch(API_DELETE, {
+  const res = await fetchWithRetry(API_DELETE, {
     method: "POST",
-    headers: getHeaders(),
+    headers: await getHeaders(),
     body: JSON.stringify({ path: safePath }),
   });
 
@@ -337,9 +336,9 @@ export const renameFolderService = async (fromPath: string, toPath: string) => {
   // 👉 nếu giống nhau thì skip
   if (from === to) return;
 
-  const res = await fetch(API_MOVE, {
+  const res = await fetchWithRetry(API_MOVE, {
     method: "POST",
-    headers: getHeaders(),
+    headers: await getHeaders(),
     body: JSON.stringify({
       from_path: from,
       to_path: to,
@@ -369,4 +368,68 @@ export const renameFolderService = async (fromPath: string, toPath: string) => {
   }
 
   return true;
+};
+
+export const refreshAccessToken = async () => {
+  const res = await fetchWithRetry("https://api.dropbox.com/oauth2/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      grant_type: "refresh_token",
+      refresh_token: process.env.DROPBOX_REFRESH_TOKEN!,
+      client_id: process.env.DROPBOX_APP_KEY!,
+      client_secret: process.env.DROPBOX_APP_SECRET!,
+    }),
+  });
+
+  const data: any = await res.json();
+
+  if (!data.access_token) {
+    throw new Error("Refresh token failed");
+  }
+
+  return data;
+};
+
+let accessToken: string | null = null;
+let expiredAt = 0;
+
+export const getAccessToken = async () => {
+  if (accessToken && Date.now() < expiredAt) {
+    return accessToken;
+  }
+
+  const data = await refreshAccessToken();
+
+  accessToken = data.access_token;
+  expiredAt = Date.now() + (data.expires_in - 60) * 1000;
+
+  return accessToken;
+};
+
+const fetchWithRetry = async (url: string, options: any) => {
+  let res = await fetch(url, options);
+
+  if (res.status === 401) {
+    accessToken = null;
+
+    const newToken = await getAccessToken();
+
+    res = await fetch(url, {
+      ...options,
+      headers: {
+        ...options.headers,
+        Authorization: `Bearer ${newToken}`,
+      },
+    });
+
+    // ❗ nếu vẫn fail → throw luôn
+    if (res.status === 401) {
+      throw new Error("Dropbox auth failed after retry");
+    }
+  }
+
+  return res;
 };
