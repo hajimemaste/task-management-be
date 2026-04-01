@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { AutopsyCase } from "../models/autopsyCase.model";
 import { IAutopsyItem } from "../interfaces/autopsyCase.interface";
 import { ApiError } from "../utils/ApiError";
@@ -425,52 +425,71 @@ export const filterCaseItems = async ({
 // =======================
 // 🔹 9. Xuất excel
 // =======================
-export const exportAutopsyExcel = async (res: any) => {
-  const cases = await AutopsyCase.find().lean();
+export const exportAutopsyExcel = async (id: string, res: any) => {
+  // validate ObjectId
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new Error("ID không hợp lệ");
+  }
+
+  const caseItem = await AutopsyCase.findById(id).lean();
+
+  if (!caseItem) {
+    throw new Error("Không tìm thấy hồ sơ");
+  }
 
   const workbook = new ExcelJS.Workbook();
 
-  for (const caseItem of cases) {
-    const sheetName = `${caseItem.caseMonth}-${caseItem.caseYear}`;
-    const sheet = workbook.addWorksheet(sheetName);
+  const sheetName = `${caseItem.caseMonth}-${caseItem.caseYear}`;
+  const sheet = workbook.addWorksheet(sheetName);
 
-    sheet.columns = [
-      { header: "STT", key: "stt", width: 6 },
-      { header: "Ngày", key: "executionDate", width: 15 },
-      { header: "Tử thi", key: "corpse", width: 25 },
-      { header: "Hình thức", key: "form", width: 15 },
-      { header: "Thời gian", key: "timeCategory", width: 20 },
-      { header: "Nội dung", key: "summary", width: 30 },
-      { header: "Cán bộ", key: "officers", width: 25 },
-      { header: "Phân công", key: "hasAssignment", width: 15 },
-      { header: "Đơn vị", key: "unit", width: 20 },
-      { header: "Số tiền", key: "paymentAmount", width: 15 },
-      { header: "Thanh toán", key: "paymentStatus", width: 15 },
-    ];
+  sheet.columns = [
+    { header: "STT", key: "stt", width: 6 },
+    { header: "Ngày", key: "executionDate", width: 15 },
+    { header: "Tử thi", key: "corpse", width: 25 },
+    { header: "Hình thức", key: "form", width: 15 },
+    { header: "Thời gian", key: "timeCategory", width: 20 },
+    { header: "Nội dung", key: "summary", width: 30 },
+    { header: "Cán bộ", key: "officers", width: 25 },
+    { header: "Phân công", key: "hasAssignment", width: 15 },
+    { header: "Đơn vị", key: "unit", width: 20 },
+    { header: "Số tiền", key: "paymentAmount", width: 15 },
+    { header: "Thanh toán", key: "paymentStatus", width: 15 },
+  ];
 
-    caseItem.mainContent.forEach((item: any, index: number) => {
-      sheet.addRow({
-        stt: index + 1,
-        executionDate: item.executionDate?.toISOString().split("T")[0],
-        corpse: `${item.corpseName} (${item.birthYear})`,
-        form: item.form,
-        timeCategory: item.timeCategory,
-        summary: item.summary,
-        officers: item.officers?.join(", "),
-        hasAssignment: item.hasAssignment ? "Có" : "Không",
-        unit: item.unit,
-        paymentAmount: item.paymentAmount || 0,
-        paymentStatus: item.paymentStatus === "PAID" ? "Đã thanh toán" : "Chưa",
-      });
+  caseItem.mainContent.forEach((item: any, index: number) => {
+    sheet.addRow({
+      stt: index + 1,
+      executionDate: item.executionDate?.toISOString().split("T")[0],
+      corpse: `${item.corpseName} (${item.birthYear})`,
+      form: item.form,
+      timeCategory: item.timeCategory,
+      summary: item.summary,
+      officers: item.officers?.join(", "),
+      hasAssignment: item.hasAssignment ? "Có" : "Không",
+      unit: item.unit,
+      paymentAmount: item.paymentAmount || 0,
+      paymentStatus: item.paymentStatus === "PAID" ? "Đã thanh toán" : "Chưa",
     });
-  }
+  });
 
+  // Auto wrap text
+  sheet.eachRow((row) => {
+    row.alignment = { vertical: "middle", wrapText: true };
+  });
+
+  // Freeze header
+  sheet.views = [{ state: "frozen", ySplit: 1 }];
+
+  // Response
   res.setHeader(
     "Content-Type",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   );
 
-  res.setHeader("Content-Disposition", "attachment; filename=autopsy.xlsx");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename=case-${caseItem.caseMonth}-${caseItem.caseYear}.xlsx`,
+  );
 
   await workbook.xlsx.write(res);
   res.end();

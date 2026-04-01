@@ -3,6 +3,7 @@ import { Task } from "../models/task.model";
 import { ApiError } from "../utils/ApiError";
 import { sendNotificationToMany } from "./notification.service";
 import { deleteFolder, renameFolderService } from "./dropbox.service";
+import { User } from "models/user.model";
 // =======================
 // 🔹 1. Tạo task (Admin)
 // =======================
@@ -366,11 +367,21 @@ export const getTaskDetail = async ({
     throw new ApiError(404, "Task không tồn tại");
   }
 
+  // 🔥 lấy user để check role
+  const user = await User.findById(userId).select("role");
+
+  if (!user) {
+    throw new ApiError(404, "User không tồn tại");
+  }
+
+  const isAdmin = user.role === "admin";
+
   const isAssigned = task.assignments.some((a) => getId(a.userId) === userId);
 
   const isOwner = getId(task.createdBy) === userId;
 
-  if (!isAssigned && !isOwner) {
+  // ✅ cho admin bypass
+  if (!isAdmin && !isAssigned && !isOwner) {
     throw new ApiError(403, "Không có quyền xem task này");
   }
 

@@ -43,7 +43,7 @@ router.delete(
 
 // Xuất excel
 router.get(
-  "/export",
+  "/export/:id",
   authMiddleware,
   requireAdmin,
   autopsyController.exportAutopsy,
