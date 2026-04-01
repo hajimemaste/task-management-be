@@ -212,6 +212,7 @@ export const getFullStatisticsAggregate = async () => {
       userId: user._id,
       name: user.name,
       role: user.role,
+      avatar: user.avatar,
 
       tongQuan: {
         thamGiaVuViec: caseData.thamGiaVuViec || 0,
