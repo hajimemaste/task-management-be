@@ -40,10 +40,10 @@ router.delete("/item/:itemId", authMiddleware, caseController.deleteCaseItem);
 
 // Xuất excel
 router.get(
-  "/export",
+  "/export/:id",
   authMiddleware,
   requireAdmin,
-  caseController.exportProfessional,
+  caseController.exportProfessionalExcel,
 );
 
 export default router;
