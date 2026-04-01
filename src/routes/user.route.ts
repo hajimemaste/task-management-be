@@ -32,4 +32,10 @@ router.get(
 router.post("/fcm-token", authMiddleware, userController.saveFCMToken);
 router.delete("/fcm-token", authMiddleware, userController.removeFCMToken);
 
+router.get(
+  "/statistics",
+  authMiddleware,
+  userController.getFullStatisticsController,
+);
+
 export default router;

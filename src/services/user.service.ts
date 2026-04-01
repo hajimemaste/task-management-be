@@ -1,6 +1,8 @@
 import { User } from "../models/user.model";
 import { IUpdateProfile } from "../interfaces/user.interface";
 import { deleteFile } from "../utils/firebase.utils";
+import { ProfessionalCase } from "../models/professionalCase.model";
+import { Task } from "../models/task.model";
 
 export const updateProfileService = async (
   userId: string,
@@ -110,4 +112,120 @@ export const removeFCMTokenService = async (userId: string, token: string) => {
   });
 
   return true;
+};
+
+// Thông kê
+
+export const getFullStatisticsAggregate = async () => {
+  const now = new Date();
+
+  // =====================
+  // 🔴 TOTAL HS (ALL)
+  // =====================
+
+  const totalHsAgg = await ProfessionalCase.aggregate([
+    { $unwind: "$mainContent" },
+    {
+      $count: "totalHs",
+    },
+  ]);
+
+  const totalHs = totalHsAgg[0]?.totalHs || 0;
+
+  // =====================
+  // 🔵 TOTAL TASK (ALL)
+  // =====================
+
+  const totalTask = await Task.countDocuments();
+
+  // =====================
+  // 🔴 CASE STATS (THEO USER)
+  // =====================
+
+  const caseStats = await ProfessionalCase.aggregate([
+    { $unwind: "$mainContent" },
+    { $unwind: "$mainContent.officers" },
+
+    {
+      $group: {
+        _id: "$mainContent.officers",
+
+        thamGiaVuViec: { $sum: 1 },
+
+        tongHoSo: { $sum: 1 }, // 🔥 KHÔNG filter nữa
+      },
+    },
+  ]);
+
+  // =====================
+  // 🔵 TASK STATS (THEO USER)
+  // =====================
+
+  const taskStats = await Task.aggregate([
+    { $unwind: "$assignments" },
+
+    {
+      $group: {
+        _id: "$assignments.userId",
+
+        hoanThanhHoSo: {
+          $sum: {
+            $cond: [{ $eq: ["$status", "COMPLETED"] }, 1, 0],
+          },
+        },
+
+        treHan: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: ["$status", "COMPLETED"] },
+                  { $lt: ["$deadline", now] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+      },
+    },
+  ]);
+
+  // =====================
+  // 🔗 MERGE
+  // =====================
+
+  const users = await User.find({}).select("_id name role").lean();
+
+  const caseMap = new Map(caseStats.map((c) => [c._id.toString(), c]));
+
+  const taskMap = new Map(taskStats.map((t) => [t._id.toString(), t]));
+
+  const result = users.map((user) => {
+    const id = user._id.toString();
+
+    const caseData = caseMap.get(id) || {};
+    const taskData = taskMap.get(id) || {};
+
+    return {
+      userId: user._id,
+      name: user.name,
+      role: user.role,
+
+      tongQuan: {
+        thamGiaVuViec: caseData.thamGiaVuViec || 0,
+        tongHoSo: caseData.tongHoSo || 0, // 🔥 ALL
+        hoanThanhHoSo: taskData.hoanThanhHoSo || 0,
+        thamMuuVanBan: 0,
+        treHan: taskData.treHan || 0,
+      },
+    };
+  });
+
+  return {
+    totalHs, // 🔥 ALL hồ sơ
+    totalTask, // 🔥 ALL task
+    result,
+  };
 };
