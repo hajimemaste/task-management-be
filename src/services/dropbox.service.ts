@@ -409,24 +409,30 @@ export const getAccessToken = async () => {
   return accessToken;
 };
 
+const buildOptions = async (token: string, options: any) => ({
+  ...options,
+  headers: {
+    ...(options.headers || {}),
+    Authorization: `Bearer ${token}`,
+  },
+});
+
 const fetchWithRetry = async (url: string, options: any) => {
-  let res = await fetch(url, options);
+  let token = await getAccessToken();
+
+  let res = await fetch(url, await buildOptions(token!, options));
 
   if (res.status === 401) {
     accessToken = null;
 
-    const newToken = await getAccessToken();
+    token = await getAccessToken();
 
-    res = await fetch(url, {
-      ...options,
-      headers: {
-        ...options.headers,
-        Authorization: `Bearer ${newToken}`,
-      },
-    });
+    // 🔥 rebuild request (QUAN TRỌNG)
+    res = await fetch(url, await buildOptions(token!, options));
 
-    // ❗ nếu vẫn fail → throw luôn
     if (res.status === 401) {
+      const text = await res.text();
+      console.error("❌ Dropbox 401 after retry:", text);
       throw new Error("Dropbox auth failed after retry");
     }
   }
