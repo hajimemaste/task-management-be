@@ -3,6 +3,7 @@ import { IUpdateProfile } from "../interfaces/user.interface";
 import { deleteFile } from "../utils/firebase.utils";
 import { ProfessionalCase } from "../models/professionalCase.model";
 import { Task } from "../models/task.model";
+import { Types } from "mongoose";
 
 export const updateProfileService = async (
   userId: string,
@@ -229,4 +230,17 @@ export const getFullStatisticsAggregate = async () => {
     totalTask, // 🔥 ALL task
     result,
   };
+};
+
+export const getMyCompletedTasks = async (userId: string) => {
+  const tasks = await Task.find({
+    status: "COMPLETED",
+    "assignments.userId": new Types.ObjectId(userId),
+  })
+    .populate("assignments.userId", "name avatar")
+    .populate("createdBy", "name")
+    .sort({ completedAt: -1 }) // mới nhất trước
+    .lean();
+
+  return tasks;
 };

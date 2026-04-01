@@ -38,4 +38,10 @@ router.get(
   userController.getFullStatisticsController,
 );
 
+router.get(
+  "/my-completed",
+  authMiddleware,
+  userController.getMyCompletedTasksController,
+);
+
 export default router;
