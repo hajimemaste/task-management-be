@@ -191,8 +191,9 @@ export const getCompletedTasksByUserController = async (
 export const getDashboardController = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id.toString();
+    const role = req.user!.role.toString();
 
-    const data = await getDashboardData(userId);
+    const data = await getDashboardData(userId, role);
 
     res.status(200).json({
       success: true,
