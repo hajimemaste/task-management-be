@@ -127,6 +127,39 @@ export const approveUserController = async (
   }
 };
 
+export const disableUserController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const id = req.params.id as string;
+    const adminId = req.user!.id.toString();
+
+    const result = await authService.disableUserService(id, adminId);
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const enableUserController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const id = req.params.id as string;
+
+    const result = await authService.enableUserService(id);
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const rejectUserController = async (
   req: Request,
   res: Response,
@@ -145,7 +178,7 @@ export const rejectUserController = async (
 };
 
 interface GetUsersQuery {
-  status?: "pending" | "approved" | "rejected";
+  status?: "pending" | "approved" | "rejected" | "disabled";
 }
 
 export const getUsersByStatusController = async (

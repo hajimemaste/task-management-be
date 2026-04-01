@@ -31,8 +31,16 @@ export const loginService = async (email: string, password: string) => {
   }
 
   // 4. Check admin đã duyệt chưa
-  if (user.status !== "approved") {
+  if (user.status === "pending") {
     throw new ApiError(403, "Tài khoản đang chờ quản trị viên phê duyệt");
+  }
+
+  if (user.status === "rejected") {
+    throw new ApiError(403, "Tài khoản đã bị từ chối");
+  }
+
+  if (user.status === "disabled") {
+    throw new ApiError(403, "Tài khoản đã bị vô hiệu hoá");
   }
 
   // 5. Check password đúng không
@@ -114,8 +122,16 @@ export const googleLoginService = async (firebaseToken: string) => {
   }
 
   // 5. Check admin duyệt chưa
-  if (user.status !== "approved") {
+  if (user.status === "pending") {
     throw new ApiError(403, "Tài khoản đang chờ quản trị viên phê duyệt");
+  }
+
+  if (user.status === "rejected") {
+    throw new ApiError(403, "Tài khoản đã bị từ chối");
+  }
+
+  if (user.status === "disabled") {
+    throw new ApiError(403, "Tài khoản đã bị vô hiệu hoá");
   }
 
   // 6. Tạo JWT
@@ -166,8 +182,16 @@ export const refreshAccessTokenService = async (refreshToken: string) => {
     throw new ApiError(401, "User not found");
   }
 
-  if (user.status !== "approved") {
-    throw new ApiError(403, "Tài khoản chưa được admin duyệt");
+  if (user.status === "pending") {
+    throw new ApiError(403, "Tài khoản đang chờ quản trị viên phê duyệt");
+  }
+
+  if (user.status === "rejected") {
+    throw new ApiError(403, "Tài khoản đã bị từ chối");
+  }
+
+  if (user.status === "disabled") {
+    throw new ApiError(403, "Tài khoản đã bị vô hiệu hoá");
   }
 
   const newAccessToken = jwt.sign(
@@ -248,6 +272,18 @@ export const verifyOTPService = async (email: string, otp: string) => {
     throw new ApiError(400, "Email đã được xác thực");
   }
 
+  if (user.status === "pending") {
+    throw new ApiError(403, "Tài khoản đang chờ quản trị viên phê duyệt");
+  }
+
+  if (user.status === "rejected") {
+    throw new ApiError(403, "Tài khoản đã bị từ chối");
+  }
+
+  if (user.status === "disabled") {
+    throw new ApiError(403, "Tài khoản đã bị vô hiệu hoá");
+  }
+
   // ❌ chưa có OTP
   if (!user.otp || !user.otpExpiredAt) {
     throw new ApiError(400, "OTP không hợp lệ");
@@ -287,6 +323,18 @@ export const resendOTPService = async (email: string) => {
   // ❌ Đã verify rồi thì không gửi nữa
   if (user.isEmailVerified) {
     throw new ApiError(400, "Email đã được xác thực");
+  }
+
+  if (user.status === "pending") {
+    throw new ApiError(403, "Tài khoản đang chờ quản trị viên phê duyệt");
+  }
+
+  if (user.status === "rejected") {
+    throw new ApiError(403, "Tài khoản đã bị từ chối");
+  }
+
+  if (user.status === "disabled") {
+    throw new ApiError(403, "Tài khoản đã bị vô hiệu hoá");
   }
 
   // ❌ OTP vẫn còn hạn -> không cho resend (anti spam)
@@ -330,6 +378,14 @@ export const approveUserService = async (userId: string, adminId: string) => {
     throw new ApiError(400, "User đã được duyệt");
   }
 
+  if (user.status === "rejected") {
+    throw new ApiError(403, "Tài khoản đã bị từ chối");
+  }
+
+  if (user.status === "disabled") {
+    throw new ApiError(403, "Tài khoản đã bị vô hiệu hoá");
+  }
+
   user.status = "approved";
   user.approvedBy = adminId;
   user.approvedAt = new Date();
@@ -340,6 +396,48 @@ export const approveUserService = async (userId: string, adminId: string) => {
 
   return {
     message: "Duyệt tài khoản thành công",
+  };
+};
+
+export const disableUserService = async (userId: string, adminId: string) => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new ApiError(404, "User không tồn tại");
+  }
+
+  if (user.status === "disabled") {
+    throw new ApiError(400, "User đã bị vô hiệu hoá");
+  }
+
+  user.status = "disabled";
+  user.approvedBy = adminId;
+  user.approvedAt = new Date();
+
+  await user.save();
+
+  return {
+    message: "Đã vô hiệu hoá tài khoản",
+  };
+};
+
+export const enableUserService = async (userId: string) => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new ApiError(404, "User không tồn tại");
+  }
+
+  if (user.status !== "disabled") {
+    throw new ApiError(400, "User không ở trạng thái bị khoá");
+  }
+
+  user.status = "approved";
+
+  await user.save();
+
+  return {
+    message: "Đã kích hoạt lại tài khoản",
   };
 };
 
@@ -373,7 +471,7 @@ export const rejectUserService = async (userId: string, adminId: string) => {
 };
 
 export const getUsersByStatusService = async (
-  status?: "pending" | "approved" | "rejected",
+  status?: "pending" | "approved" | "rejected" | "disabled",
 ) => {
   const filter: any = {};
 

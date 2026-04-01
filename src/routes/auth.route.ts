@@ -73,6 +73,22 @@ router.patch(
   authController.approveUserController,
 );
 
+// disable user
+router.patch(
+  "/:userId/disable",
+  authMiddleware,
+  requireAdmin,
+  authController.disableUserController,
+);
+
+// enable user
+router.patch(
+  "/:userId/enable",
+  authMiddleware,
+  requireAdmin,
+  authController.enableUserController,
+);
+
 // ❌ Từ chối user
 router.patch(
   "/admin/users/:id/reject",
