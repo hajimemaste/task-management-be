@@ -33,7 +33,7 @@ const userSchema = new Schema<IUser>(
 
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected"],
+      enum: ["pending", "approved", "rejected", "disabled"],
       default: "pending",
     },
 

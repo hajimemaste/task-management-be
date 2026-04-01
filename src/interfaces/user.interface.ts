@@ -2,7 +2,7 @@ import { Document, ObjectId } from "mongoose";
 import { IFirebaseUpload } from "./firebase.interface";
 
 export type AuthProvider = "local" | "google";
-export type AccountStatus = "pending" | "approved" | "rejected";
+export type AccountStatus = "pending" | "approved" | "rejected" | "disabled";
 export type UserRole = "user" | "admin";
 
 export interface IUser extends Document {
