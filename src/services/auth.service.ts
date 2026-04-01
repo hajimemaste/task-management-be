@@ -473,7 +473,9 @@ export const rejectUserService = async (userId: string, adminId: string) => {
 export const getUsersByStatusService = async (
   status?: "pending" | "approved" | "rejected" | "disabled",
 ) => {
-  const filter: any = {};
+  const filter: any = {
+    role: { $ne: "admin" },
+  };
 
   if (status) {
     filter.status = status;
