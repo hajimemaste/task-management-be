@@ -244,3 +244,16 @@ export const getMyCompletedTasks = async (userId: string) => {
 
   return tasks;
 };
+
+export const getUserCompletedTasks = async (userId: string) => {
+  const tasks = await Task.find({
+    status: "COMPLETED",
+    "assignments.userId": new Types.ObjectId(userId),
+  })
+    .populate("assignments.userId", "name avatar")
+    .populate("createdBy", "name")
+    .sort({ completedAt: -1 })
+    .lean();
+
+  return tasks;
+};
