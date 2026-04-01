@@ -235,70 +235,99 @@ export const listAll = async (path: string) => {
 
   let entries: any[] = [];
 
-  const res = await fetchWithRetry(API_LIST, {
-    method: "POST",
-    headers: await getHeaders(),
-    body: JSON.stringify({ path }),
-  });
-
-  const text = await res.text();
-
-  let data: any;
-
   try {
-    data = JSON.parse(text);
-  } catch {
-    throw new Error("Invalid Dropbox response: " + text);
-  }
-
-  // 👉 folder chưa tồn tại
-  if (data.error?.error_summary?.includes("path/not_found")) {
-    return [];
-  }
-
-  if (data.error) {
-    throw new DropboxError("List folder failed", 500, data);
-  }
-
-  entries.push(...data.entries);
-
-  while (data.has_more) {
-    const res2 = await fetchWithRetry(API_LIST_CONTINUE, {
+    const res = await fetchWithRetry(API_LIST, {
       method: "POST",
       headers: await getHeaders(),
-      body: JSON.stringify({ cursor: data.cursor }),
+      body: JSON.stringify({ path }),
     });
 
-    data = await res2.json();
+    const text = await res.text();
 
-    if (data.error) {
-      throw new Error("List continue failed");
+    let data: any;
+
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.warn("⚠️ Dropbox non-JSON response:", text);
+      return [];
     }
 
-    entries.push(...data.entries);
+    // 👉 folder chưa tồn tại → OK
+    if (
+      data?.error?.error_summary?.includes("path/not_found") ||
+      data?.error?.[".tag"] === "path"
+    ) {
+      return [];
+    }
+
+    // 👉 lỗi khác → log nhưng KHÔNG crash
+    if (data.error) {
+      console.warn("⚠️ Dropbox list error:", data);
+      return [];
+    }
+
+    entries.push(...(data.entries || []));
+
+    // =========================
+    // 🔁 CONTINUE
+    // =========================
+
+    while (data.has_more) {
+      const res2 = await fetchWithRetry(API_LIST_CONTINUE, {
+        method: "POST",
+        headers: await getHeaders(),
+        body: JSON.stringify({ cursor: data.cursor }),
+      });
+
+      let nextData: any;
+
+      try {
+        nextData = await res2.json();
+      } catch {
+        console.warn("⚠️ Invalid continue response");
+        break;
+      }
+
+      if (nextData.error) {
+        console.warn("⚠️ List continue error:", nextData);
+        break;
+      }
+
+      entries.push(...(nextData.entries || []));
+      data = nextData;
+    }
+
+    // =========================
+    // 🔥 MAP FILE
+    // =========================
+
+    const files = await Promise.all(
+      entries
+        .filter((e) => e[".tag"] === "file")
+        .map(async (f) => {
+          try {
+            const url = await getSharedLink(f.path_lower);
+
+            return {
+              name: f.name,
+              path: f.path_lower,
+              size: f.size,
+              mimeType: getMimeType(f.name),
+              url,
+            };
+          } catch (err) {
+            console.warn("⚠️ getSharedLink fail:", f.path_lower);
+            return null;
+          }
+        }),
+    );
+
+    return files.filter(Boolean);
+  } catch (err) {
+    console.error("❌ listAll crash:", err);
+    return [];
   }
-
-  // =========================
-  // 🔥 MAP sang format FE cần
-  // =========================
-
-  const files = await Promise.all(
-    entries
-      .filter((e) => e[".tag"] === "file")
-      .map(async (f) => {
-        const url = await getSharedLink(f.path_lower);
-
-        return {
-          name: f.name,
-          path: f.path_lower,
-          size: f.size,
-          mimeType: getMimeType(f.name),
-          url,
-        };
-      }),
-  );
-
-  return files;
 };
 
 export const deleteFolder = async (path: string) => {
