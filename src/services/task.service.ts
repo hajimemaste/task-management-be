@@ -3,7 +3,7 @@ import { Task } from "../models/task.model";
 import { ApiError } from "../utils/ApiError";
 import { sendNotificationToMany } from "./notification.service";
 import { deleteFolder, renameFolderService } from "./dropbox.service";
-import { User } from "models/user.model";
+import { User } from "../models/user.model";
 // =======================
 // 🔹 1. Tạo task (Admin)
 // =======================
