@@ -426,45 +426,81 @@ export const filterCaseItems = async ({
 // 🔹 9. Xuất excel
 // =======================
 export const exportAutopsyExcel = async (id: string, res: any) => {
-  // validate ObjectId
   if (!mongoose.Types.ObjectId.isValid(id)) {
     throw new Error("ID không hợp lệ");
   }
 
-  const caseItem = await AutopsyCase.findById(id).lean();
+  const caseItem = await AutopsyCase.findById(id)
+    .populate("mainContent.officers", "name") // 👈 lấy tên
+    .lean();
 
   if (!caseItem) {
     throw new Error("Không tìm thấy hồ sơ");
   }
 
   const workbook = new ExcelJS.Workbook();
-
   const sheetName = `${caseItem.caseMonth}-${caseItem.caseYear}`;
   const sheet = workbook.addWorksheet(sheetName);
 
+  // ✅ HEADER IN HOA
   sheet.columns = [
     { header: "STT", key: "stt", width: 6 },
-    { header: "Ngày", key: "executionDate", width: 15 },
-    { header: "Tử thi", key: "corpse", width: 25 },
-    { header: "Hình thức", key: "form", width: 15 },
-    { header: "Thời gian", key: "timeCategory", width: 20 },
-    { header: "Nội dung", key: "summary", width: 30 },
-    { header: "Cán bộ", key: "officers", width: 25 },
-    { header: "Phân công", key: "hasAssignment", width: 15 },
-    { header: "Đơn vị", key: "unit", width: 20 },
-    { header: "Số tiền", key: "paymentAmount", width: 15 },
-    { header: "Thanh toán", key: "paymentStatus", width: 15 },
+    { header: "NGÀY", key: "executionDate", width: 15 },
+    { header: "TỬ THI", key: "corpse", width: 25 },
+    { header: "HÌNH THỨC", key: "form", width: 15 },
+    { header: "THỜI GIAN", key: "timeCategory", width: 20 },
+    { header: "NỘI DUNG", key: "summary", width: 30 },
+    { header: "CÁN BỘ", key: "officers", width: 25 },
+    { header: "PHÂN CÔNG", key: "hasAssignment", width: 15 },
+    { header: "ĐƠN VỊ", key: "unit", width: 20 },
+    { header: "SỐ TIỀN", key: "paymentAmount", width: 15 },
+    { header: "THANH TOÁN", key: "paymentStatus", width: 15 },
   ];
 
-  caseItem.mainContent.forEach((item: any, index: number) => {
+  // ✅ STYLE HEADER
+  const headerRow = sheet.getRow(1);
+  headerRow.font = { bold: true };
+  headerRow.alignment = { vertical: "middle", horizontal: "center" };
+
+  // =======================
+  // 🔥 SORT THEO executionDate
+  // =======================
+  const sortedData = [...caseItem.mainContent].sort((a: any, b: any) => {
+    return (
+      new Date(a.executionDate).getTime() - new Date(b.executionDate).getTime()
+    );
+  });
+
+  // =======================
+  // 🔥 FORMAT DATE dd/mm/yyyy
+  // =======================
+  const formatDate = (date: Date) => {
+    if (!date) return "";
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // =======================
+  // DATA
+  // =======================
+  sortedData.forEach((item: any, index: number) => {
     sheet.addRow({
       stt: index + 1,
-      executionDate: item.executionDate?.toISOString().split("T")[0],
+      executionDate: formatDate(item.executionDate),
       corpse: `${item.corpseName} (${item.birthYear})`,
       form: item.form,
       timeCategory: item.timeCategory,
       summary: item.summary,
-      officers: item.officers?.join(", "),
+
+      // ✅ officers → tên
+      officers: item.officers
+        ?.map((o: any) => o?.name)
+        .filter(Boolean)
+        .join(", "),
+
       hasAssignment: item.hasAssignment ? "Có" : "Không",
       unit: item.unit,
       paymentAmount: item.paymentAmount || 0,
@@ -472,9 +508,21 @@ export const exportAutopsyExcel = async (id: string, res: any) => {
     });
   });
 
-  // Auto wrap text
-  sheet.eachRow((row) => {
+  // =======================
+  // STYLE ROW
+  // =======================
+  sheet.eachRow((row, rowNumber) => {
     row.alignment = { vertical: "middle", wrapText: true };
+
+    if (rowNumber > 1) {
+      row.getCell("stt").alignment = { horizontal: "center" };
+      row.getCell("executionDate").alignment = { horizontal: "center" };
+      row.getCell("timeCategory").alignment = { horizontal: "center" };
+      row.getCell("hasAssignment").alignment = { horizontal: "center" };
+      row.getCell("unit").alignment = { horizontal: "center" };
+      row.getCell("paymentAmount").alignment = { horizontal: "center" };
+      row.getCell("paymentStatus").alignment = { horizontal: "center" };
+    }
   });
 
   // Freeze header
@@ -488,7 +536,7 @@ export const exportAutopsyExcel = async (id: string, res: any) => {
 
   res.setHeader(
     "Content-Disposition",
-    `attachment; filename=case-${caseItem.caseMonth}-${caseItem.caseYear}.xlsx`,
+    `attachment; filename=autopsy-${caseItem.caseMonth}-${caseItem.caseYear}.xlsx`,
   );
 
   await workbook.xlsx.write(res);

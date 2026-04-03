@@ -555,63 +555,93 @@ export const filterCaseItems = async ({
 // =======================
 
 export const exportProfessionalExcel = async (id: string, res: any) => {
-  // validate ObjectId
   if (!mongoose.Types.ObjectId.isValid(id)) {
     throw new Error("ID không hợp lệ");
   }
 
-  const caseItem = await ProfessionalCase.findById(id).lean();
+  const caseItem = await ProfessionalCase.findById(id)
+    .populate("mainContent.officers", "name") // 👈 lấy tên
+    .lean();
 
   if (!caseItem) {
     throw new Error("Không tìm thấy hồ sơ");
   }
 
   const workbook = new ExcelJS.Workbook();
-
   const sheetName = `${caseItem.caseMonth}-${caseItem.caseYear}`;
   const sheet = workbook.addWorksheet(sheetName);
 
-  // Header
+  // ✅ HEADER IN HOA
   sheet.columns = [
     { header: "STT", key: "stt", width: 6 },
-    { header: "Ngày làm", key: "workDate", width: 15 },
-    { header: "Nội dung vụ việc", key: "content", width: 30 },
-    { header: "Dấu vết", key: "traces", width: 25 },
-    { header: "Cán bộ thực hiện", key: "officers", width: 25 },
-    { header: "Ghi chú", key: "note", width: 25 },
-    { header: "Loại vụ việc", key: "caseType", width: 15 },
-    { header: "Đơn vị thụ lý", key: "unit", width: 20 },
-    { header: "Tiến độ", key: "progress", width: 25 },
-    { header: "Số ảnh", key: "imageCount", width: 10 },
-    { header: "Có ảnh", key: "hasImages", width: 10 },
+    { header: "NGÀY LÀM", key: "workDate", width: 15 },
+    { header: "NỘI DUNG VỤ VIỆC", key: "content", width: 30 },
+    { header: "DẤU VẾT", key: "traces", width: 25 },
+    { header: "CÁN BỘ THỰC HIỆN", key: "officers", width: 25 },
+    { header: "GHI CHÚ", key: "note", width: 25 },
+    { header: "LOẠI VỤ VIỆC", key: "caseType", width: 15 },
+    { header: "ĐƠN VỊ", key: "unit", width: 20 },
   ];
 
-  // Style header (xịn hơn 👇)
-  sheet.getRow(1).font = { bold: true };
-  sheet.getRow(1).alignment = { vertical: "middle", horizontal: "center" };
+  // ✅ STYLE HEADER
+  const headerRow = sheet.getRow(1);
+  headerRow.font = { bold: true };
+  headerRow.alignment = { vertical: "middle", horizontal: "center" };
 
-  // Data
-  caseItem.mainContent.forEach((item: any, index: number) => {
+  // =======================
+  // 🔥 SORT THEO workDate
+  // =======================
+  const sortedData = [...caseItem.mainContent].sort((a: any, b: any) => {
+    return new Date(a.workDate).getTime() - new Date(b.workDate).getTime();
+  });
+
+  // =======================
+  // 🔥 FORMAT DATE dd/mm/yyyy
+  // =======================
+  const formatDate = (date: Date) => {
+    if (!date) return "";
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // =======================
+  // DATA
+  // =======================
+  sortedData.forEach((item: any, index: number) => {
     sheet.addRow({
       stt: index + 1,
-      workDate: item.workDate
-        ? new Date(item.workDate).toISOString().split("T")[0]
-        : "",
+      workDate: formatDate(item.workDate),
       content: item.content,
       traces: item.traces,
-      officers: item.officers?.join(", "),
+
+      // ✅ officers → tên
+      officers: item.officers
+        ?.map((o: any) => o?.name)
+        .filter(Boolean)
+        .join(", "),
+
       note: item.note,
       caseType: item.caseType,
       unit: item.unit,
-      progress: item.progress,
-      imageCount: item.imageCount || 0,
-      hasImages: item.hasImages ? "Có" : "Không",
     });
   });
 
-  // Auto wrap text
-  sheet.eachRow((row) => {
+  // =======================
+  // STYLE ROW
+  // =======================
+  sheet.eachRow((row, rowNumber) => {
     row.alignment = { vertical: "middle", wrapText: true };
+
+    // 👉 căn giữa STT + ngày
+    if (rowNumber > 1) {
+      row.getCell("stt").alignment = { horizontal: "center" };
+      row.getCell("workDate").alignment = { horizontal: "center" };
+      row.getCell("caseType").alignment = { horizontal: "center" };
+      row.getCell("unit").alignment = { horizontal: "center" };
+    }
   });
 
   // Freeze header
