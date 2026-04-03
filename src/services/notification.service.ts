@@ -236,3 +236,7 @@ export const countUnreadNotifications = async (userId: string) => {
     isRead: false,
   });
 };
+
+export const getAllNotificationsForAdmin = async () => {
+  return Notification.find().sort({ createdAt: -1 }).limit(100);
+};
