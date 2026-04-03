@@ -575,9 +575,9 @@ export const exportProfessionalExcel = async (id: string, res: any) => {
   sheet.columns = [
     { header: "STT", key: "stt", width: 6 },
     { header: "NGÀY LÀM", key: "workDate", width: 15 },
-    { header: "NỘI DUNG VỤ VIỆC", key: "content", width: 30 },
-    { header: "DẤU VẾT", key: "traces", width: 25 },
-    { header: "CÁN BỘ THỰC HIỆN", key: "officers", width: 25 },
+    { header: "NỘI DUNG VỤ VIỆC", key: "content", width: 90 },
+    { header: "DẤU VẾT", key: "traces", width: 30 },
+    { header: "CÁN BỘ THỰC HIỆN", key: "officers", width: 30 },
     { header: "GHI CHÚ", key: "note", width: 25 },
     { header: "LOẠI VỤ VIỆC", key: "caseType", width: 15 },
     { header: "ĐƠN VỊ", key: "unit", width: 20 },
@@ -585,8 +585,17 @@ export const exportProfessionalExcel = async (id: string, res: any) => {
 
   // ✅ STYLE HEADER
   const headerRow = sheet.getRow(1);
-  headerRow.font = { bold: true };
-  headerRow.alignment = { vertical: "middle", horizontal: "center" };
+  headerRow.eachCell((cell) => {
+    cell.font = { bold: true };
+    cell.alignment = { vertical: "middle", horizontal: "center" };
+
+    cell.border = {
+      top: { style: "medium" },
+      left: { style: "medium" },
+      bottom: { style: "medium" },
+      right: { style: "medium" },
+    };
+  });
 
   // =======================
   // 🔥 SORT THEO workDate
@@ -634,14 +643,33 @@ export const exportProfessionalExcel = async (id: string, res: any) => {
   // =======================
   sheet.eachRow((row, rowNumber) => {
     row.alignment = { vertical: "middle", wrapText: true };
-
+    if (rowNumber === 1) return;
     // 👉 căn giữa STT + ngày
-    if (rowNumber > 1) {
-      row.getCell("stt").alignment = { horizontal: "center" };
-      row.getCell("workDate").alignment = { horizontal: "center" };
-      row.getCell("caseType").alignment = { horizontal: "center" };
-      row.getCell("unit").alignment = { horizontal: "center" };
-    }
+    row.getCell("stt").alignment = {
+      horizontal: "center",
+      vertical: "middle",
+    };
+    row.getCell("workDate").alignment = {
+      horizontal: "center",
+      vertical: "middle",
+    };
+    row.getCell("caseType").alignment = {
+      horizontal: "center",
+      vertical: "middle",
+    };
+    row.getCell("unit").alignment = {
+      horizontal: "center",
+      vertical: "middle",
+    };
+
+    row.eachCell((cell) => {
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+    });
   });
 
   // Freeze header
