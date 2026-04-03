@@ -334,18 +334,11 @@ export const getDashboardData = async (userId: string, role: string) => {
   // =====================
   // 🔔 NOTIFICATIONS
   // =====================
-  const notifications = isAdmin
-    ? await Notification.find({})
-        .sort({ createdAt: -1 })
-        .limit(5)
-        .select("title type createdAt isRead data userId")
-        .populate("userId", "name") // 🔥 biết ai bị
-        .lean()
-    : await Notification.find({ userId })
-        .sort({ createdAt: -1 })
-        .limit(5)
-        .select("title type createdAt isRead data")
-        .lean();
+  const notifications = await Notification.find({ userId })
+    .sort({ createdAt: -1 })
+    .limit(10)
+    .select("title type createdAt isRead data")
+    .lean();
 
   // =====================
   // 📈 CHART (7 ngày)
