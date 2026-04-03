@@ -1,6 +1,12 @@
 import mongoose, { Types } from "mongoose";
 import { ProfessionalCase } from "../models/professionalCase.model";
-import { ICaseItem } from "../interfaces/professionalCase.interface";
+import {
+  CASE_PROGRESS_LABEL,
+  CASE_TYPE_LABEL,
+  CaseProgress,
+  CaseType,
+  ICaseItem,
+} from "../interfaces/professionalCase.interface";
 import { ApiError } from "../utils/ApiError";
 import { sendNotificationToMany } from "../services/notification.service";
 import ExcelJS from "exceljs";
@@ -581,6 +587,8 @@ export const exportProfessionalExcel = async (id: string, res: any) => {
     { header: "GHI CHÚ", key: "note", width: 25 },
     { header: "LOẠI VỤ VIỆC", key: "caseType", width: 15 },
     { header: "ĐƠN VỊ", key: "unit", width: 20 },
+    { header: "TIẾN ĐỘ", key: "unit", width: 20 },
+    { header: "ĐỀ XUẤT ẢNH", key: "unit", width: 20 },
   ];
 
   // ✅ STYLE HEADER
@@ -639,8 +647,10 @@ export const exportProfessionalExcel = async (id: string, res: any) => {
         .join(", "),
 
       note: item.note,
-      caseType: item.caseType,
+      caseType: CASE_TYPE_LABEL[item.caseType as CaseType],
       unit: item.unit,
+      progress: CASE_PROGRESS_LABEL[item.progress as CaseProgress],
+      imageCount: item.hasImages ? item.imageCount.toString() : "-",
     });
   });
 
@@ -664,6 +674,14 @@ export const exportProfessionalExcel = async (id: string, res: any) => {
       vertical: "middle",
     };
     row.getCell("unit").alignment = {
+      horizontal: "center",
+      vertical: "middle",
+    };
+    row.getCell("progress").alignment = {
+      horizontal: "center",
+      vertical: "middle",
+    };
+    row.getCell("imageCount").alignment = {
       horizontal: "center",
       vertical: "middle",
     };
