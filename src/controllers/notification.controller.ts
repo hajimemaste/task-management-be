@@ -18,3 +18,8 @@ export const getUnreadCount = async (req: Request, res: Response) => {
   const count = await notificationService.countUnreadNotifications(userId);
   res.json({ count });
 };
+
+export const getAllNotifications = async (req: Request, res: Response) => {
+  const data = await notificationService.getAllNotificationsForAdmin();
+  res.json(data);
+};

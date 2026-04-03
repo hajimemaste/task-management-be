@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as notificationController from "../controllers/notification.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
+import { requireAdmin } from "../middlewares/requireAdmin.middleware";
 
 const router = Router();
 
@@ -20,5 +21,12 @@ router.get(
 
 // Mark 1 notification là đã đọc
 router.patch("/:id/read", authMiddleware, notificationController.markAsRead);
+
+router.get(
+  "/all",
+  authMiddleware,
+  requireAdmin,
+  notificationController.getAllNotifications,
+);
 
 export default router;
