@@ -585,9 +585,15 @@ export const exportProfessionalExcel = async (id: string, res: any) => {
 
   // ✅ STYLE HEADER
   const headerRow = sheet.getRow(1);
+  headerRow.height = 30;
+
   headerRow.eachCell((cell) => {
     cell.font = { bold: true };
-    cell.alignment = { vertical: "middle", horizontal: "center" };
+    cell.alignment = {
+      vertical: "middle",
+      horizontal: "center",
+      wrapText: true,
+    };
 
     cell.border = {
       top: { style: "medium" },
