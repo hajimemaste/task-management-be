@@ -17,6 +17,25 @@ export type CaseProgress =
   | "DONE_NOT_CONTACTED"
   | "PENDING";
 
+export const CASE_PROGRESS_LABEL = {
+  DONE_HANDOVER: "Đã hoàn thành và bàn giao",
+  DONE_CONTACTED: "Đã hoàn thành và liên hệ với ĐTV",
+  DONE_NOT_CONTACTED: "Đã hoàn thành và chưa liên được với ĐTV",
+  PENDING: "Đang chờ",
+};
+
+export const CASE_TYPE_LABEL = {
+  TNGT: "TNGT",
+  TNLĐ: "TNLĐ",
+  CYGTT: "CYGTT",
+  OTHER_DEATH: "Chết do NN khác",
+  DRUG: "Ma tuý",
+  RAPE: "Hiếp dâm",
+  MURDER: "Giết người",
+  THEFT: "TCTS",
+  OTHER: "Hiện trường khác",
+};
+
 export interface ICaseItem {
   _id?: ObjectId;
 

@@ -1,6 +1,12 @@
 import mongoose, { Types } from "mongoose";
 import { AutopsyCase } from "../models/autopsyCase.model";
-import { IAutopsyItem } from "../interfaces/autopsyCase.interface";
+import {
+  AUTOPSY_FORM_LABEL,
+  AutopsyForm,
+  IAutopsyItem,
+  TIME_CATEGORY_LABEL,
+  TimeCategory,
+} from "../interfaces/autopsyCase.interface";
 import { ApiError } from "../utils/ApiError";
 import { sendNotificationToMany } from "./notification.service";
 import ExcelJS from "exceljs";
@@ -507,8 +513,10 @@ export const exportAutopsyExcel = async (id: string, res: any) => {
       stt: index + 1,
       executionDate: formatDate(item.executionDate),
       corpse: `${item.corpseName} (${item.birthYear})`,
-      form: item.form,
-      timeCategory: item.timeCategory,
+      form: AUTOPSY_FORM_LABEL[item.form as AutopsyForm] || item.form,
+      timeCategory:
+        TIME_CATEGORY_LABEL[item.timeCategory as TimeCategory] ||
+        item.timeCategory,
       summary: item.summary,
 
       // ✅ officers → tên
