@@ -155,6 +155,12 @@ export const getFullStatisticsAggregate = async () => {
         thamGiaVuViec: { $sum: 1 },
 
         tongHoSo: { $sum: 1 }, // 🔥 KHÔNG filter nữa
+
+        hoanThanhHoSo: {
+          $sum: {
+            $cond: [{ $ne: ["$mainContent.progress", "PENDING"] }, 1, 0],
+          },
+        },
       },
     },
   ]);
@@ -170,7 +176,7 @@ export const getFullStatisticsAggregate = async () => {
       $group: {
         _id: "$assignments.userId",
 
-        hoanThanhHoSo: {
+        thamMuuVanBan: {
           $sum: {
             $cond: [{ $eq: ["$status", "COMPLETED"] }, 1, 0],
           },
@@ -219,8 +225,8 @@ export const getFullStatisticsAggregate = async () => {
       tongQuan: {
         thamGiaVuViec: caseData.thamGiaVuViec || 0,
         tongHoSo: caseData.tongHoSo || 0,
-        hoanThanhHoSo: taskData.hoanThanhHoSo || 0,
-        thamMuuVanBan: 0,
+        hoanThanhHoSo: caseData.hoanThanhHoSo || 0,
+        thamMuuVanBan: taskData.thamMuuVanBan || 0,
         treHan: taskData.treHan || 0,
       },
     };
