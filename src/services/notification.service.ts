@@ -152,7 +152,19 @@ export const sendNotificationToMany = async ({
   type,
   data = {},
 }: SendNotificationToManyPayload) => {
-  const users = await User.find({ _id: { $in: userIds } });
+  // =======================
+  // 🔥 0. LẤY ADMIN
+  // =======================
+  const admins = await User.find({ role: "ADMIN" }).select("_id");
+
+  const adminIds = admins.map((a) => a._id.toString());
+
+  // 👉 merge + remove duplicate
+  const finalUserIds = Array.from(
+    new Set([...userIds.map(String), ...adminIds]),
+  );
+
+  const users = await User.find({ _id: { $in: finalUserIds } });
   if (!users.length) return;
 
   // =======================
@@ -168,7 +180,7 @@ export const sendNotificationToMany = async ({
     })),
   );
 
-  const userIdStrings = userIds.map((id) => id.toString());
+  const userIdStrings = finalUserIds;
 
   // =======================
   // 🔥 2. REALTIME - LIST
@@ -183,7 +195,9 @@ export const sendNotificationToMany = async ({
   const unreadCounts = await Notification.aggregate([
     {
       $match: {
-        userId: { $in: userIds.map((id) => new Types.ObjectId(id)) },
+        userId: {
+          $in: finalUserIds.map((id) => new Types.ObjectId(id)),
+        },
         isRead: false,
       },
     },
@@ -196,15 +210,13 @@ export const sendNotificationToMany = async ({
   ]);
 
   unreadCounts.forEach((u) => {
-    console.log("🚀 EMIT:", u._id.toString(), u.count);
-
     emitToUsers([u._id.toString()], "notification:unread", {
       count: u.count,
     });
   });
 
   // =======================
-  // 🔹 4. FCM (CUỐI CÙNG)
+  // 🔹 4. FCM
   // =======================
   const tokens = users.flatMap((u) => u.fcmTokens || []);
 
