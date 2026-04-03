@@ -53,6 +53,11 @@ const CaseItemSchema = new Schema(
       ref: "User",
       required: true,
     },
+
+    submissionDeadline: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

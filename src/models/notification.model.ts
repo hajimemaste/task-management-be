@@ -30,6 +30,7 @@ const NotificationSchema = new Schema<INotification>(
         "PROFESSIONAL_CREATED",
         "PROFESSIONAL_UPDATED",
         "PROFESSIONAL_DELETED",
+        "PROFESSIONAL_DEADLINE_SET",
         "AUTOPSY_CREATED",
         "AUTOPSY_UPDATED",
         "AUTOPSY_DELETED",
