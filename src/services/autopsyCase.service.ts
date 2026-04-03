@@ -459,8 +459,17 @@ export const exportAutopsyExcel = async (id: string, res: any) => {
 
   // ✅ STYLE HEADER
   const headerRow = sheet.getRow(1);
-  headerRow.font = { bold: true };
-  headerRow.alignment = { vertical: "middle", horizontal: "center" };
+  headerRow.eachCell((cell) => {
+    cell.font = { bold: true };
+    cell.alignment = { vertical: "middle", horizontal: "center" };
+
+    cell.border = {
+      top: { style: "medium" },
+      left: { style: "medium" },
+      bottom: { style: "medium" },
+      right: { style: "medium" },
+    };
+  });
 
   // =======================
   // 🔥 SORT THEO executionDate
@@ -513,16 +522,41 @@ export const exportAutopsyExcel = async (id: string, res: any) => {
   // =======================
   sheet.eachRow((row, rowNumber) => {
     row.alignment = { vertical: "middle", wrapText: true };
+    if (rowNumber === 1) return;
+    row.getCell("stt").alignment = { horizontal: "center", vertical: "middle" };
+    row.getCell("executionDate").alignment = {
+      horizontal: "center",
+      vertical: "middle",
+    };
+    row.getCell("timeCategory").alignment = {
+      horizontal: "center",
+      vertical: "middle",
+    };
+    row.getCell("hasAssignment").alignment = {
+      horizontal: "center",
+      vertical: "middle",
+    };
+    row.getCell("unit").alignment = {
+      horizontal: "center",
+      vertical: "middle",
+    };
+    row.getCell("paymentAmount").alignment = {
+      horizontal: "center",
+      vertical: "middle",
+    };
+    row.getCell("paymentStatus").alignment = {
+      horizontal: "center",
+      vertical: "middle",
+    };
 
-    if (rowNumber > 1) {
-      row.getCell("stt").alignment = { horizontal: "center" };
-      row.getCell("executionDate").alignment = { horizontal: "center" };
-      row.getCell("timeCategory").alignment = { horizontal: "center" };
-      row.getCell("hasAssignment").alignment = { horizontal: "center" };
-      row.getCell("unit").alignment = { horizontal: "center" };
-      row.getCell("paymentAmount").alignment = { horizontal: "center" };
-      row.getCell("paymentStatus").alignment = { horizontal: "center" };
-    }
+    row.eachCell((cell) => {
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+    });
   });
 
   // Freeze header
