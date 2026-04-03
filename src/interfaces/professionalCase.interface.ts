@@ -36,6 +36,9 @@ export interface ICaseItem {
   imageCount?: number;
   hasImages?: boolean;
 
+  // 👉 NEW FIELD
+  submissionDeadline?: Date;
+
   createdBy: ObjectId;
 
   createdAt?: Date;

@@ -179,3 +179,22 @@ export const exportProfessionalExcel = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const setSubmissionDeadlineController = async (
+  req: Request,
+  res: Response,
+) => {
+  const { caseId, itemId } = req.params;
+  const { submissionDeadline } = req.body;
+
+  const result = await caseService.setSubmissionDeadline({
+    caseId: caseId.toString(),
+    itemId: itemId.toString(),
+    submissionDeadline: new Date(submissionDeadline),
+  });
+
+  return res.status(200).json({
+    message: "Submission deadline updated",
+    data: result,
+  });
+};

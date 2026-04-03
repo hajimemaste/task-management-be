@@ -46,4 +46,11 @@ router.get(
   caseController.exportProfessionalExcel,
 );
 
+router.patch(
+  "/:caseId/items/:itemId/deadline",
+  authMiddleware,
+  requireAdmin,
+  caseController.setSubmissionDeadlineController,
+);
+
 export default router;

@@ -631,3 +631,53 @@ export const exportProfessionalExcel = async (id: string, res: any) => {
   await workbook.xlsx.write(res);
   res.end();
 };
+
+export const setSubmissionDeadline = async ({
+  caseId,
+  itemId,
+  submissionDeadline,
+}: {
+  caseId: string;
+  itemId: string;
+  submissionDeadline: Date;
+}) => {
+  const caseDoc = await ProfessionalCase.findById(caseId);
+
+  if (!caseDoc) {
+    throw new ApiError(404, "Hồ sơ không tồn tại");
+  }
+
+  const item: ICaseItem = (caseDoc.mainContent as any).id(itemId);
+
+  if (!item) {
+    throw new ApiError(404, "Dòng dữ liệu không tồn tại");
+  }
+
+  item.submissionDeadline = submissionDeadline;
+
+  const deadlineStr = new Date(submissionDeadline).toLocaleDateString("vi-VN");
+
+  await caseDoc.save();
+
+  const officers = [...new Set(item.officers.map((id) => id.toString()))];
+
+  try {
+    await sendNotificationToMany({
+      userIds: officers,
+      title: "Cập nhật hạn nộp hồ sơ",
+      body: `Hồ sơ "${item.content}" có hạn nộp: ${deadlineStr}`,
+      type: "PROFESSIONAL_DEADLINE_SET",
+      data: {
+        caseId: caseDoc._id.toString(),
+        type: "PROFESSIONAL_DEADLINE_SET",
+        name: caseDoc.caseCode.toString(),
+        month: caseDoc.caseMonth.toString(),
+        year: caseDoc.caseYear.toString(),
+      },
+    });
+  } catch (err) {
+    console.error("Send notification failed:", err);
+  }
+
+  return item;
+};
