@@ -7,7 +7,6 @@ import {
   saveFCMTokenService,
   removeFCMTokenService,
   getFullStatisticsAggregate,
-  getUserCompletedTasks,
   getDashboardData,
   getMyStatisticsAggregate,
 } from "../services/user.service";
