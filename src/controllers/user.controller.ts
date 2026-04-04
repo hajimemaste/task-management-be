@@ -172,7 +172,7 @@ export const getCompletedTasksByUserController = async (
   try {
     const { userId } = req.params;
 
-    const tasks = await getUserCompletedTasks(userId.toString());
+    const tasks = await getMyStatisticsAggregate(userId.toString());
 
     res.status(200).json({
       success: true,
