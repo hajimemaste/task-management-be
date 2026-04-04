@@ -239,17 +239,126 @@ export const getFullStatisticsAggregate = async () => {
   };
 };
 
-export const getMyCompletedTasks = async (userId: string) => {
-  const tasks = await Task.find({
-    status: "COMPLETED",
-    "assignments.userId": new Types.ObjectId(userId),
-  })
-    .populate("assignments.userId", "name avatar")
-    .populate("createdBy", "name")
-    .sort({ completedAt: -1 }) // mới nhất trước
+export const getMyStatisticsAggregate = async (userId: string) => {
+  const now = new Date();
+  const objectUserId = new Types.ObjectId(userId);
+
+  // =====================
+  // 🔴 TOTAL HS (ALL)
+  // =====================
+  const totalHsAgg = await ProfessionalCase.aggregate([
+    { $unwind: "$mainContent" },
+    { $count: "totalHs" },
+  ]);
+
+  const totalHs = totalHsAgg[0]?.totalHs || 0;
+
+  // =====================
+  // 🔵 TOTAL TASK (ALL)
+  // =====================
+  const totalTask = await Task.countDocuments();
+
+  // =====================
+  // 🔴 CASE STATS (ONLY USER)
+  // =====================
+  const caseStatsAgg = await ProfessionalCase.aggregate([
+    { $unwind: "$mainContent" },
+    { $unwind: "$mainContent.officers" },
+
+    // 🔥 FILTER USER
+    {
+      $match: {
+        "mainContent.officers": objectUserId,
+      },
+    },
+
+    {
+      $group: {
+        _id: "$mainContent.officers",
+
+        thamGiaVuViec: { $sum: 1 },
+        tongHoSo: { $sum: 1 },
+
+        hoanThanhHoSo: {
+          $sum: {
+            $cond: [{ $ne: ["$mainContent.progress", "PENDING"] }, 1, 0],
+          },
+        },
+      },
+    },
+  ]);
+
+  const caseData = caseStatsAgg[0] || {};
+
+  // =====================
+  // 🔵 TASK STATS (ONLY USER)
+  // =====================
+  const taskStatsAgg = await Task.aggregate([
+    { $unwind: "$assignments" },
+
+    // 🔥 FILTER USER
+    {
+      $match: {
+        "assignments.userId": objectUserId,
+      },
+    },
+
+    {
+      $group: {
+        _id: "$assignments.userId",
+
+        thamMuuVanBan: {
+          $sum: {
+            $cond: [{ $eq: ["$status", "COMPLETED"] }, 1, 0],
+          },
+        },
+
+        treHan: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: ["$status", "COMPLETED"] },
+                  { $lt: ["$deadline", now] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+      },
+    },
+  ]);
+
+  const taskData = taskStatsAgg[0] || {};
+
+  // =====================
+  // 🔗 USER INFO
+  // =====================
+  const user = await User.findById(userId)
+    .select("_id name role avatar")
     .lean();
 
-  return tasks;
+  return {
+    totalHs,
+    totalTask,
+
+    user: {
+      userId: user?._id,
+      name: user?.name,
+      role: user?.role,
+      avatar: user?.avatar,
+
+      tongQuan: {
+        thamGiaVuViec: caseData.thamGiaVuViec || 0,
+        tongHoSo: caseData.tongHoSo || 0,
+        hoanThanhHoSo: caseData.hoanThanhHoSo || 0,
+        thamMuuVanBan: taskData.thamMuuVanBan || 0,
+        treHan: taskData.treHan || 0,
+      },
+    },
+  };
 };
 
 export const getUserCompletedTasks = async (userId: string) => {

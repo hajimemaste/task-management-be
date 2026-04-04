@@ -7,9 +7,9 @@ import {
   saveFCMTokenService,
   removeFCMTokenService,
   getFullStatisticsAggregate,
-  getMyCompletedTasks,
   getUserCompletedTasks,
   getDashboardData,
+  getMyStatisticsAggregate,
 } from "../services/user.service";
 
 /**
@@ -149,7 +149,7 @@ export const getMyCompletedTasksController = async (
   try {
     const userId = req.user!.id.toString();
 
-    const tasks = await getMyCompletedTasks(userId);
+    const tasks = await getMyStatisticsAggregate(userId);
 
     res.status(200).json({
       success: true,
