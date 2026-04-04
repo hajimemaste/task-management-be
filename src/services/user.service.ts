@@ -244,21 +244,6 @@ export const getMyStatisticsAggregate = async (userId: string) => {
   const objectUserId = new Types.ObjectId(userId);
 
   // =====================
-  // 🔴 TOTAL HS (ALL)
-  // =====================
-  const totalHsAgg = await ProfessionalCase.aggregate([
-    { $unwind: "$mainContent" },
-    { $count: "totalHs" },
-  ]);
-
-  const totalHs = totalHsAgg[0]?.totalHs || 0;
-
-  // =====================
-  // 🔵 TOTAL TASK (ALL)
-  // =====================
-  const totalTask = await Task.countDocuments();
-
-  // =====================
   // 🔴 CASE STATS (ONLY USER)
   // =====================
   const caseStatsAgg = await ProfessionalCase.aggregate([
@@ -341,23 +326,11 @@ export const getMyStatisticsAggregate = async (userId: string) => {
     .lean();
 
   return {
-    totalHs,
-    totalTask,
-
-    user: {
-      userId: user?._id,
-      name: user?.name,
-      role: user?.role,
-      avatar: user?.avatar,
-
-      tongQuan: {
-        thamGiaVuViec: caseData.thamGiaVuViec || 0,
-        tongHoSo: caseData.tongHoSo || 0,
-        hoanThanhHoSo: caseData.hoanThanhHoSo || 0,
-        thamMuuVanBan: taskData.thamMuuVanBan || 0,
-        treHan: taskData.treHan || 0,
-      },
-    },
+    thamGiaVuViec: caseData.thamGiaVuViec || 0,
+    tongHoSo: caseData.tongHoSo || 0,
+    hoanThanhHoSo: caseData.hoanThanhHoSo || 0,
+    thamMuuVanBan: taskData.thamMuuVanBan || 0,
+    treHan: taskData.treHan || 0,
   };
 };
 
