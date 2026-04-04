@@ -334,19 +334,6 @@ export const getMyStatisticsAggregate = async (userId: string) => {
   };
 };
 
-export const getUserCompletedTasks = async (userId: string) => {
-  const tasks = await Task.find({
-    status: "COMPLETED",
-    "assignments.userId": new Types.ObjectId(userId),
-  })
-    .populate("assignments.userId", "name avatar")
-    .populate("createdBy", "name")
-    .sort({ completedAt: -1 })
-    .lean();
-
-  return tasks;
-};
-
 export const getDashboardData = async (userId: string, role: string) => {
   const now = new Date();
 
