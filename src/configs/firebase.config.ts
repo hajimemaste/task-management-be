@@ -10,9 +10,11 @@ const serviceAccount = JSON.parse(
   ),
 );
 
+serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, "\n");
+
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET, // 👈 thêm dòng này
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
 });
 
 // 👇 export bucket lại
