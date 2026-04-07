@@ -182,6 +182,10 @@ export const refreshAccessTokenService = async (refreshToken: string) => {
     throw new ApiError(401, "User not found");
   }
 
+  if (!user.isEmailVerified) {
+    throw new ApiError(403, "Email chưa được xác thực");
+  }
+
   if (user.status === "pending") {
     throw new ApiError(403, "Tài khoản đang chờ quản trị viên phê duyệt");
   }
@@ -272,10 +276,6 @@ export const verifyOTPService = async (email: string, otp: string) => {
     throw new ApiError(400, "Email đã được xác thực");
   }
 
-  if (user.status === "pending") {
-    throw new ApiError(403, "Tài khoản đang chờ quản trị viên phê duyệt");
-  }
-
   if (user.status === "rejected") {
     throw new ApiError(403, "Tài khoản đã bị từ chối");
   }
@@ -323,10 +323,6 @@ export const resendOTPService = async (email: string) => {
   // ❌ Đã verify rồi thì không gửi nữa
   if (user.isEmailVerified) {
     throw new ApiError(400, "Email đã được xác thực");
-  }
-
-  if (user.status === "pending") {
-    throw new ApiError(403, "Tài khoản đang chờ quản trị viên phê duyệt");
   }
 
   if (user.status === "rejected") {
@@ -475,6 +471,7 @@ export const getUsersByStatusService = async (
 ) => {
   const filter: any = {
     role: { $ne: "admin" },
+    isEmailVerified: true,
   };
 
   if (status) {
