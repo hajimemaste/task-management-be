@@ -66,7 +66,7 @@ const sendPushToTokens = async ({
 
   for (const batch of batches) {
     try {
-      const res = await admin.messaging().sendMulticast({
+      const res = await admin.messaging().sendEachForMulticast({
         tokens: batch,
         notification: {
           title,
