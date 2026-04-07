@@ -587,8 +587,8 @@ export const exportProfessionalExcel = async (id: string, res: any) => {
     { header: "GHI CHÚ", key: "note", width: 25 },
     { header: "LOẠI VỤ VIỆC", key: "caseType", width: 15 },
     { header: "ĐƠN VỊ", key: "unit", width: 20 },
-    { header: "TIẾN ĐỘ", key: "unit", width: 20 },
-    { header: "ĐỀ XUẤT ẢNH", key: "unit", width: 20 },
+    { header: "TIẾN ĐỘ", key: "progress", width: 20 },
+    { header: "ĐỀ XUẤT ẢNH", key: "imageCount", width: 20 },
   ];
 
   // ✅ STYLE HEADER
