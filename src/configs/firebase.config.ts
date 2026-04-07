@@ -10,14 +10,14 @@ const serviceAccount = JSON.parse(
   ),
 );
 
+// 🔥 FIX key
 serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, "\n");
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-});
-
-// 👇 export bucket lại
-export const bucket = admin.storage().bucket();
+// 🔥 QUAN TRỌNG: chỉ init 1 lần
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+}
 
 export default admin;
