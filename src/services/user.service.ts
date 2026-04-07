@@ -124,12 +124,9 @@ export const getFullStatisticsAggregate = async () => {
   // =====================
   // 🔴 TOTAL HS (ALL)
   // =====================
-
   const totalHsAgg = await ProfessionalCase.aggregate([
     { $unwind: "$mainContent" },
-    {
-      $count: "totalHs",
-    },
+    { $count: "totalHs" },
   ]);
 
   const totalHs = totalHsAgg[0]?.totalHs || 0;
@@ -137,13 +134,11 @@ export const getFullStatisticsAggregate = async () => {
   // =====================
   // 🔵 TOTAL TASK (ALL)
   // =====================
-
   const totalTask = await Task.countDocuments();
 
   // =====================
   // 🔴 CASE STATS (THEO USER)
   // =====================
-
   const caseStats = await ProfessionalCase.aggregate([
     { $unwind: "$mainContent" },
     { $unwind: "$mainContent.officers" },
@@ -151,10 +146,8 @@ export const getFullStatisticsAggregate = async () => {
     {
       $group: {
         _id: "$mainContent.officers",
-
         thamGiaVuViec: { $sum: 1 },
-
-        tongHoSo: { $sum: 1 }, // 🔥 KHÔNG filter nữa
+        tongHoSo: { $sum: 1 },
 
         hoanThanhHoSo: {
           $sum: {
@@ -166,9 +159,30 @@ export const getFullStatisticsAggregate = async () => {
   ]);
 
   // =====================
+  // 🔴 CASE TRỄ (THEO USER)
+  // =====================
+  const lateCaseStats = await ProfessionalCase.aggregate([
+    { $unwind: "$mainContent" },
+    { $unwind: "$mainContent.officers" },
+
+    {
+      $match: {
+        "mainContent.progress": "PENDING",
+        "mainContent.submissionDeadline": { $ne: null, $lt: now },
+      },
+    },
+
+    {
+      $group: {
+        _id: "$mainContent.officers",
+        lateCases: { $sum: 1 },
+      },
+    },
+  ]);
+
+  // =====================
   // 🔵 TASK STATS (THEO USER)
   // =====================
-
   const taskStats = await Task.aggregate([
     { $unwind: "$assignments" },
 
@@ -203,18 +217,18 @@ export const getFullStatisticsAggregate = async () => {
   // =====================
   // 🔗 MERGE
   // =====================
-
   const users = await User.find({}).select("_id name role avatar").lean();
 
   const caseMap = new Map(caseStats.map((c) => [c._id.toString(), c]));
-
   const taskMap = new Map(taskStats.map((t) => [t._id.toString(), t]));
+  const lateCaseMap = new Map(lateCaseStats.map((l) => [l._id.toString(), l]));
 
   const result = users.map((user) => {
     const id = user._id.toString();
 
     const caseData = caseMap.get(id) || {};
     const taskData = taskMap.get(id) || {};
+    const lateCaseData = lateCaseMap.get(id) || {};
 
     return {
       userId: user._id,
@@ -226,15 +240,19 @@ export const getFullStatisticsAggregate = async () => {
         thamGiaVuViec: caseData.thamGiaVuViec || 0,
         tongHoSo: caseData.tongHoSo || 0,
         hoanThanhHoSo: caseData.hoanThanhHoSo || 0,
-        thamMuuVanBan: taskData.thamMuuVanBan || 0,
+
+        // 🔥 GỘP 2 NGUỒN
+        thamMuuVanBan:
+          (taskData.thamMuuVanBan || 0) + (lateCaseData.lateCases || 0),
+
         treHan: taskData.treHan || 0,
       },
     };
   });
 
   return {
-    totalHs, // 🔥 ALL hồ sơ
-    totalTask, // 🔥 ALL task
+    totalHs,
+    totalTask,
     result,
   };
 };
@@ -250,7 +268,6 @@ export const getMyStatisticsAggregate = async (userId: string) => {
     { $unwind: "$mainContent" },
     { $unwind: "$mainContent.officers" },
 
-    // 🔥 FILTER USER
     {
       $match: {
         "mainContent.officers": objectUserId,
@@ -281,7 +298,6 @@ export const getMyStatisticsAggregate = async (userId: string) => {
   const taskStatsAgg = await Task.aggregate([
     { $unwind: "$assignments" },
 
-    // 🔥 FILTER USER
     {
       $match: {
         "assignments.userId": objectUserId,
@@ -319,17 +335,38 @@ export const getMyStatisticsAggregate = async (userId: string) => {
   const taskData = taskStatsAgg[0] || {};
 
   // =====================
-  // 🔗 USER INFO
+  // 🔴 CASE TRỄ (CHO thamMuuVanBan)
   // =====================
-  const user = await User.findById(userId)
-    .select("_id name role avatar")
-    .lean();
+  const lateCaseAgg = await ProfessionalCase.aggregate([
+    { $unwind: "$mainContent" },
+    { $unwind: "$mainContent.officers" },
 
+    {
+      $match: {
+        "mainContent.officers": objectUserId,
+        "mainContent.progress": "PENDING",
+        "mainContent.submissionDeadline": { $lt: now },
+      },
+    },
+
+    {
+      $count: "lateCases",
+    },
+  ]);
+
+  const lateCases = lateCaseAgg[0]?.lateCases || 0;
+
+  // =====================
+  // 🔗 FINAL
+  // =====================
   return {
     thamGiaVuViec: caseData.thamGiaVuViec || 0,
     tongHoSo: caseData.tongHoSo || 0,
     hoanThanhHoSo: caseData.hoanThanhHoSo || 0,
-    thamMuuVanBan: taskData.thamMuuVanBan || 0,
+
+    // 🔥 GỘP 2 NGUỒN
+    thamMuuVanBan: (taskData.thamMuuVanBan || 0) + lateCases,
+
     treHan: taskData.treHan || 0,
   };
 };
