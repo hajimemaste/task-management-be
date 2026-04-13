@@ -252,33 +252,37 @@ export const deleteTask = async ({ taskId, adminId }: any) => {
 
 export const getMyTasks = async (userId: string) => {
   const tasks = await Task.aggregate([
-    // 👉 filter theo user
     {
       $match: {
         "assignments.userId": new Types.ObjectId(userId),
       },
     },
 
-    // 👉 thêm priority
+    // 🔥 priority mới
     {
       $addFields: {
         priority: {
-          $cond: [{ $eq: ["$status", "ACTIVE"] }, 0, 1],
+          $switch: {
+            branches: [
+              { case: { $eq: ["$status", "OVERDUE"] }, then: 0 },
+              { case: { $eq: ["$status", "PENDING_APPROVAL"] }, then: 1 },
+              { case: { $eq: ["$status", "ACTIVE"] }, then: 2 },
+            ],
+            default: 3,
+          },
         },
       },
     },
 
-    // 👉 sort
     {
       $sort: {
-        priority: 1, // ACTIVE lên trước
-        deadline: 1, // ACTIVE → deadline
-        updatedAt: -1, // others → updatedAt
+        priority: 1,
+        deadline: 1,
+        updatedAt: -1,
       },
     },
   ]);
 
-  // 👉 populate lại user
   return Task.populate(tasks, {
     path: "assignments.userId",
     select: "name",
@@ -294,7 +298,14 @@ export const getAllTasks = async () => {
     {
       $addFields: {
         priority: {
-          $cond: [{ $eq: ["$status", "ACTIVE"] }, 0, 1],
+          $switch: {
+            branches: [
+              { case: { $eq: ["$status", "OVERDUE"] }, then: 0 },
+              { case: { $eq: ["$status", "PENDING_APPROVAL"] }, then: 1 },
+              { case: { $eq: ["$status", "ACTIVE"] }, then: 2 },
+            ],
+            default: 3,
+          },
         },
       },
     },
