@@ -219,9 +219,17 @@ export const getFullStatisticsAggregate = async () => {
   // =====================
   const users = await User.find({}).select("_id name role avatar").lean();
 
-  const caseMap = new Map(caseStats.map((c) => [c._id.toString(), c]));
-  const taskMap = new Map(taskStats.map((t) => [t._id.toString(), t]));
-  const lateCaseMap = new Map(lateCaseStats.map((l) => [l._id.toString(), l]));
+  const caseMap = new Map(
+    caseStats.filter((c) => c._id).map((c) => [c._id.toString(), c]),
+  );
+
+  const taskMap = new Map(
+    taskStats.filter((t) => t._id).map((t) => [t._id.toString(), t]),
+  );
+
+  const lateCaseMap = new Map(
+    lateCaseStats.filter((l) => l._id).map((l) => [l._id.toString(), l]),
+  );
 
   const result = users.map((user) => {
     const id = user._id.toString();
