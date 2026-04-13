@@ -474,6 +474,24 @@ export const updateTask = async ({
   task.attachments = attachments;
 
   // =======================
+  // 🔥 3.1 UPDATE STATUS BY DEADLINE
+  // =======================
+  const now = new Date();
+
+  if (deadline) {
+    const deadlineDate = new Date(deadline);
+
+    // set về cuối ngày (23:59:59) để tránh lệch giờ
+    deadlineDate.setHours(23, 59, 59, 999);
+
+    if (deadlineDate < now) {
+      task.status = "OVERDUE";
+    } else {
+      task.status = "ACTIVE";
+    }
+  }
+
+  // =======================
   // 🔥 4. HANDLE ASSIGNMENTS
   // =======================
 
