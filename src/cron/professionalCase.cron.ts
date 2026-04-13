@@ -4,7 +4,7 @@ import { sendNotificationToMany } from "../services/notification.service";
 
 export const startProfessionalCaseCron = () => {
   cron.schedule(
-    "0 8 * * *",
+    "30 7 * * *",
     async () => {
       console.log("⏰ Running professional case deadline reminder...");
 

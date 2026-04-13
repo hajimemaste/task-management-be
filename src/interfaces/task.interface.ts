@@ -45,6 +45,8 @@ export interface ITask extends Document {
   approvedBy?: ObjectId;
   approvedAt?: Date;
 
+  lastReminderAt?: Date;
+
   completedAt?: Date;
   cancelledAt?: Date;
 

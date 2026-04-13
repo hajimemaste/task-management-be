@@ -78,6 +78,10 @@ const TaskSchema = new Schema<ITask>(
 
     approvedAt: Date,
 
+    lastReminderAt: {
+      type: Date,
+    },
+
     completedAt: Date,
     cancelledAt: Date,
   },
