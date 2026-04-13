@@ -126,6 +126,15 @@ export const getFullStatisticsAggregate = async () => {
   // =====================
   const totalHsAgg = await ProfessionalCase.aggregate([
     { $unwind: "$mainContent" },
+
+    {
+      $match: {
+        "mainContent.progress": {
+          $in: ["DONE_HANDOVER", "DONE_CONTACTED", "DONE_NOT_CONTACTED"],
+        },
+      },
+    },
+
     { $count: "totalHs" },
   ]);
 
@@ -134,8 +143,9 @@ export const getFullStatisticsAggregate = async () => {
   // =====================
   // 🔵 TOTAL TASK (ALL)
   // =====================
-  const totalTask = await Task.countDocuments();
-
+  const totalTask = await Task.countDocuments({
+    status: "COMPLETED",
+  });
   // =====================
   // 🔴 CASE STATS (THEO USER)
   // =====================
