@@ -73,6 +73,14 @@ const sendPushToTokens = async ({
           body,
         },
         data,
+
+        apns: {
+          payload: {
+            aps: {
+              contentAvailable: true, // 🔥 QUAN TRỌNG
+            },
+          },
+        },
       });
 
       const invalidTokens: string[] = [];
@@ -251,4 +259,46 @@ export const countUnreadNotifications = async (userId: string) => {
 
 export const getAllNotificationsForAdmin = async () => {
   return Notification.find().sort({ createdAt: -1 }).limit(100);
+};
+
+export const testPushNotification = async ({ userId }: { userId: string }) => {
+  const user = await User.findById(userId);
+  if (!user || !user.fcmTokens?.length) {
+    console.log("❌ Không có token");
+    return;
+  }
+
+  const tokens = user.fcmTokens;
+
+  try {
+    const res = await admin.messaging().sendEachForMulticast({
+      tokens,
+
+      // 👇 vẫn có notification để background hiển thị
+      notification: {
+        title: "🧪 TEST PUSH",
+        body: "Nếu bạn thấy cái này → iOS OK",
+      },
+
+      // 👇 data để test foreground
+      data: {
+        type: "TEST",
+        title: "🧪 TEST PUSH",
+        body: "Foreground check",
+      },
+
+      // 👇 QUAN TRỌNG CHO iOS
+      apns: {
+        payload: {
+          aps: {
+            contentAvailable: true,
+          },
+        },
+      },
+    });
+
+    console.log("✅ Test push sent:", res.successCount);
+  } catch (err: any) {
+    console.error("❌ Test push error:", err.message);
+  }
 };

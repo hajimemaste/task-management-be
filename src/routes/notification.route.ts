@@ -29,4 +29,6 @@ router.get(
   notificationController.getAllNotifications,
 );
 
+router.post("/test-push", notificationController.testPushController);
+
 export default router;

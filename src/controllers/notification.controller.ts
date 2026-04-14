@@ -23,3 +23,12 @@ export const getAllNotifications = async (req: Request, res: Response) => {
   const data = await notificationService.getAllNotificationsForAdmin();
   res.json(data);
 };
+
+// controller
+export const testPushController = async (req: Request, res: Response) => {
+  const { userId } = req.body;
+
+  await notificationService.testPushNotification({ userId });
+
+  res.json({ message: "Sent test push" });
+};
