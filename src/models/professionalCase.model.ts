@@ -48,6 +48,10 @@ const CaseItemSchema = new Schema(
     imageCount: { type: Number, default: 0 },
     hasImages: { type: Boolean, default: false },
 
+    participants: {
+      type: String,
+    },
+
     createdBy: {
       type: Schema.Types.ObjectId,
       ref: "User",

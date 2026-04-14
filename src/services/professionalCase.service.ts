@@ -583,6 +583,7 @@ export const exportProfessionalExcel = async (id: string, res: any) => {
     { header: "NGÀY LÀM", key: "workDate", width: 15 },
     { header: "NỘI DUNG VỤ VIỆC", key: "content", width: 90 },
     { header: "DẤU VẾT", key: "traces", width: 30 },
+    { header: "CÁN BỘ THAM GIA", key: "participants", width: 30 },
     { header: "CÁN BỘ THỰC HIỆN", key: "officers", width: 30 },
     { header: "GHI CHÚ", key: "note", width: 25 },
     { header: "LOẠI VỤ VIỆC", key: "caseType", width: 15 },
@@ -639,6 +640,7 @@ export const exportProfessionalExcel = async (id: string, res: any) => {
       workDate: formatDate(item.workDate),
       content: item.content,
       traces: item.traces,
+      participants: item.participants,
 
       // ✅ officers → tên
       officers: item.officers

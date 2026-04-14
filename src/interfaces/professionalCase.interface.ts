@@ -57,6 +57,7 @@ export interface ICaseItem {
 
   // 👉 NEW FIELD
   submissionDeadline?: Date;
+  participants?: string;
 
   createdBy: ObjectId;
 
