@@ -10,7 +10,7 @@ export const createTask = async (req: Request, res: Response) => {
   const { title, description, category, deadline, attachments, userIds } =
     req.body;
 
-  const adminId = req.user!.id;
+  const userId = req.user!.id;
 
   const data = await taskService.createTask({
     title,
@@ -19,7 +19,7 @@ export const createTask = async (req: Request, res: Response) => {
     deadline: new Date(deadline),
     attachments,
     userIds,
-    adminId,
+    userId: userId.toString(),
   });
 
   res.json({ success: true, data });
@@ -179,11 +179,11 @@ export const updateTaskController = async (
     const { title, description, category, deadline, attachments, userIds } =
       req.body;
 
-    const adminId = req.user?.id.toString();
+    const userId = req.user?.id.toString();
 
     const task = await taskService.updateTask({
       taskId,
-      adminId,
+      userId,
       title,
       description,
       category,

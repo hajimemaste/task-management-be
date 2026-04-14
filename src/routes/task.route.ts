@@ -32,7 +32,7 @@ router.patch("/:taskId/complete", authMiddleware, taskController.completeTask);
 // =======================
 
 // tạo task
-router.post("/", authMiddleware, requireAdmin, taskController.createTask);
+router.post("/", authMiddleware, taskController.createTask);
 
 // lấy tất cả
 router.get("/", authMiddleware, requireAdmin, taskController.getAllTasks);
@@ -54,11 +54,6 @@ router.patch(
 );
 
 // Cập nhật task
-router.put(
-  "/:taskId",
-  authMiddleware,
-  requireAdmin,
-  taskController.updateTaskController,
-);
+router.put("/:taskId", authMiddleware, taskController.updateTaskController);
 
 export default router;

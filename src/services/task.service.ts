@@ -15,7 +15,7 @@ export const createTask = async ({
   deadline,
   attachments,
   userIds,
-  adminId,
+  userId,
 }: any) => {
   if (!userIds?.length) {
     throw new ApiError(400, "Phải chọn ít nhất 1 người");
@@ -37,7 +37,7 @@ export const createTask = async ({
 
   const existed = await Task.findOne({
     title: { $regex: `^${cleanTitle}$`, $options: "i" },
-    createdBy: adminId,
+    createdBy: userId,
   });
 
   if (existed) {
@@ -56,7 +56,7 @@ export const createTask = async ({
     deadline,
     attachments,
     assignments,
-    createdBy: adminId,
+    createdBy: userId,
   });
 
   // 🔔 notify user
@@ -405,7 +405,7 @@ export const getTaskDetail = async ({
 
 export const updateTask = async ({
   taskId,
-  adminId,
+  userId,
   title,
   description,
   category,
@@ -445,7 +445,7 @@ export const updateTask = async ({
   const existed = await Task.findOne({
     _id: { $ne: taskId },
     title: { $regex: `^${cleanTitle}$`, $options: "i" },
-    createdBy: adminId,
+    createdBy: userId,
   });
 
   if (existed) {
