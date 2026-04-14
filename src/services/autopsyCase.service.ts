@@ -456,6 +456,7 @@ export const exportAutopsyExcel = async (id: string, res: any) => {
     { header: "HÌNH THỨC", key: "form", width: 15 },
     { header: "THỜI GIAN", key: "timeCategory", width: 20 },
     { header: "NỘI DUNG", key: "summary", width: 30 },
+    { header: "CÁN THAM GIA", key: "participants", width: 25 },
     { header: "CÁN BỘ", key: "officers", width: 25 },
     { header: "PHÂN CÔNG", key: "hasAssignment", width: 15 },
     { header: "ĐƠN VỊ", key: "unit", width: 20 },
@@ -518,6 +519,7 @@ export const exportAutopsyExcel = async (id: string, res: any) => {
         TIME_CATEGORY_LABEL[item.timeCategory as TimeCategory] ||
         item.timeCategory,
       summary: item.summary,
+      participants: item.participants,
 
       // ✅ officers → tên
       officers: item.officers
