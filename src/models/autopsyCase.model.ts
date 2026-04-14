@@ -40,6 +40,10 @@ const AutopsyItemSchema = new Schema(
 
     unit: { type: String },
 
+    participants: {
+      type: String,
+    },
+
     paymentAmount: {
       type: Number,
       default: 0,

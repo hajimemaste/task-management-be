@@ -51,6 +51,8 @@ export interface IAutopsyItem {
   paymentAmount?: number;
   paymentStatus: PaymentStatus;
 
+  participants?: string;
+
   createdBy: ObjectId;
 
   createdAt?: Date;
