@@ -15,10 +15,16 @@ export const startTaskCron = () => {
         // =======================
         // 🔥 1. UPDATE OVERDUE (BATCH)
         // =======================
+        const startOfToday = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+        );
+
         await Task.updateMany(
           {
             status: { $in: ["ACTIVE", "PENDING_APPROVAL"] },
-            deadline: { $lt: now },
+            deadline: { $lt: startOfToday },
           },
           {
             $set: { status: "OVERDUE" },

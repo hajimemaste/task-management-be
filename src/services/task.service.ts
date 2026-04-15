@@ -4,6 +4,7 @@ import { ApiError } from "../utils/ApiError";
 import { sendNotificationToMany } from "./notification.service";
 import { deleteFolder, renameFolderService } from "./dropbox.service";
 import { User } from "../models/user.model";
+import { toEndOfDay } from "../utils/toEndOfDay";
 // =======================
 // 🔹 1. Tạo task (Admin)
 // =======================
@@ -53,7 +54,7 @@ export const createTask = async ({
     title,
     description,
     category,
-    deadline,
+    deadline: toEndOfDay(deadline),
     attachments,
     assignments,
     createdBy: userId,
@@ -345,8 +346,16 @@ export const filterTasks = async ({
 
   if (fromDate || toDate) {
     query.deadline = {};
-    if (fromDate) query.deadline.$gte = fromDate;
-    if (toDate) query.deadline.$lte = toDate;
+
+    if (fromDate) {
+      const [y, m, d] = fromDate.split("-").map(Number);
+      query.deadline.$gte = new Date(y, m - 1, d, 0, 0, 0, 0);
+    }
+
+    if (toDate) {
+      const [y, m, d] = toDate.split("-").map(Number);
+      query.deadline.$lte = new Date(y, m - 1, d, 23, 59, 59, 999);
+    }
   }
 
   return Task.find(query).sort({ deadline: 1 });
@@ -470,21 +479,18 @@ export const updateTask = async ({
   task.title = title;
   task.description = description;
   task.category = category;
-  task.deadline = deadline;
   task.attachments = attachments;
 
   // =======================
   // 🔥 3.1 UPDATE STATUS BY DEADLINE
   // =======================
-  const now = new Date();
 
   if (deadline) {
-    const deadlineDate = new Date(deadline);
+    const deadlineDate = toEndOfDay(deadline);
 
-    // set về cuối ngày (23:59:59) để tránh lệch giờ
-    deadlineDate.setHours(23, 59, 59, 999);
+    task.deadline = deadlineDate; // 🔥 chỉ set 1 lần
 
-    if (deadlineDate < now) {
+    if (deadlineDate.getTime() < Date.now()) {
       task.status = "OVERDUE";
     } else {
       task.status = "ACTIVE";

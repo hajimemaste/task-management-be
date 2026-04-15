@@ -164,7 +164,7 @@ export const googleLoginService = async (firebaseToken: string) => {
 // ========================= REFRESH ACCESS TOKEN =========================
 
 export const refreshAccessTokenService = async (refreshToken: string) => {
-  if (!refreshToken) {
+  if (!refreshToken || typeof refreshToken !== "string") {
     throw new ApiError(401, "Refresh token required");
   }
 

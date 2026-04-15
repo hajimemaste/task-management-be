@@ -75,9 +75,14 @@ const sendPushToTokens = async ({
         data,
 
         apns: {
+          headers: {
+            "apns-push-type": "alert", // 🔥 BẮT BUỘC
+            "apns-priority": "10",
+          },
           payload: {
             aps: {
-              contentAvailable: true, // 🔥 QUAN TRỌNG
+              "content-available": true, // 🔥 QUAN TRỌNG
+              sound: "default",
             },
           },
         },
@@ -289,9 +294,14 @@ export const testPushNotification = async ({ userId }: { userId: string }) => {
 
       // 👇 QUAN TRỌNG CHO iOS
       apns: {
+        headers: {
+          "apns-push-type": "alert", // 🔥 BẮT BUỘC
+          "apns-priority": "10",
+        },
         payload: {
           aps: {
-            contentAvailable: true,
+            "content-available": true,
+            sound: "default",
           },
         },
       },
