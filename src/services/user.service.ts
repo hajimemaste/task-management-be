@@ -461,7 +461,7 @@ export const getDashboardData = async (userId: string, role: string) => {
   const notifications = await Notification.find({ userId })
     .sort({ createdAt: -1 })
     .limit(10)
-    .select("title type createdAt isRead data")
+    .select("title type createdAt isRead data body")
     .lean();
 
   // =====================
