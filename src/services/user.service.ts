@@ -438,12 +438,25 @@ export const getDashboardData = async (userId: string, role: string) => {
   // =====================
   const urgentTasks = await Task.find({
     ...taskFilter,
-    status: { $ne: "COMPLETED" },
+    status: { $nin: ["COMPLETED", "PENDING_APPROVAL"] },
   })
     .sort({ deadline: 1 })
     .limit(5)
     .select("title deadline status assignments")
     .populate("assignments.userId", "name") // 🔥 admin cần biết ai
+    .lean();
+
+  // =====================
+  // 🔥 PENDING APPROVAL TASKS
+  // =====================
+
+  const pendingApprovalTasks = await Task.find({
+    ...taskFilter,
+    status: "PENDING_APPROVAL",
+  })
+    .sort({ updatedAt: -1 })
+    .select("title deadline status assignments")
+    .populate("assignments.userId", "name")
     .lean();
 
   // =====================
@@ -502,6 +515,8 @@ export const getDashboardData = async (userId: string, role: string) => {
     },
 
     urgentTasks,
+
+    pendingApprovalTasks,
 
     notifications,
 
