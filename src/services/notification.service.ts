@@ -168,7 +168,7 @@ export const sendNotificationToMany = async ({
   // =======================
   // 🔥 0. LẤY ADMIN
   // =======================
-  const admins = await User.find({ role: "ADMIN" }).select("_id");
+  const admins = await User.find({ role: "admin" }).select("_id");
 
   const adminIds = admins.map((a) => a._id.toString());
 

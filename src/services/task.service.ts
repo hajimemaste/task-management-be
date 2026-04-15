@@ -85,6 +85,8 @@ export const acceptTask = async ({
 }) => {
   const task = await Task.findById(taskId);
 
+  const user = await User.findById(userId).select("name");
+
   if (!task) throw new ApiError(404, "Task không tồn tại");
 
   const assignment = task.assignments.find(
@@ -107,9 +109,11 @@ export const acceptTask = async ({
   // 🔔 Notify Admin
   // =======================
 
+  const userName = user?.name || "Nhân viên";
+
   await sendNotificationToMany({
     userIds: [task.createdBy.toString()],
-    title: "Nhân viên đã nhận nhiệm vụ",
+    title: `${userName} đã nhận nhiệm vụ`,
     body: `${task.title}`,
     type: "TASK_ACCEPTED",
     data: {
@@ -172,7 +176,7 @@ export const completeTaskByUser = async ({
 
   await sendNotificationToMany({
     userIds: [task.createdBy.toString()],
-    title: "Nhiệm vụ đã hoàn thành",
+    title: "Nhiệm vụ đã hoàn thành đang đợi duyệt",
     body: task.title,
     type: "TASK_DONE",
     data: {
@@ -203,6 +207,17 @@ export const approveTask = async ({ taskId, adminId }: any) => {
   task.approvedAt = new Date();
 
   await task.save();
+
+  await sendNotificationToMany({
+    userIds: [task.createdBy.toString()],
+    title: "Nhiệm vụ đã hoàn thành và được duyệt",
+    body: task.title,
+    type: "TASK_APPROVED",
+    data: {
+      taskId: task._id.toString(),
+      type: "TASK_APPROVED",
+    },
+  });
 
   return task;
 };
