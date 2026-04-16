@@ -60,7 +60,6 @@ export const getProfileService = async (userId: string) => {
 export const getActiveUsersService = async (currentUserId: string) => {
   const users = await User.find({
     status: "approved",
-    role: { $ne: "admin" },
     _id: { $ne: currentUserId },
   })
     .select(
@@ -493,6 +492,7 @@ export const getDashboardData = async (userId: string, role: string) => {
         },
         count: { $sum: 1 },
       },
+      x,
     },
     {
       $sort: { _id: 1 },
