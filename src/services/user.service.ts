@@ -492,7 +492,6 @@ export const getDashboardData = async (userId: string, role: string) => {
         },
         count: { $sum: 1 },
       },
-      x,
     },
     {
       $sort: { _id: 1 },
