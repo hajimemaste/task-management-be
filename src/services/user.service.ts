@@ -175,8 +175,24 @@ export const getFullStatisticsAggregate = async () => {
 
     {
       $match: {
-        "mainContent.progress": "PENDING",
-        "mainContent.submissionDeadline": { $ne: null, $lt: now },
+        $or: [
+          // 🔴 chưa hoàn thành nhưng quá hạn
+          {
+            "mainContent.progress": "PENDING",
+            "mainContent.submissionDeadline": { $ne: null, $lt: now },
+          },
+
+          // 🔴 hoàn thành nhưng trễ
+          {
+            "mainContent.completedAt": { $ne: null },
+            $expr: {
+              $gt: [
+                "$mainContent.completedAt",
+                "$mainContent.submissionDeadline",
+              ],
+            },
+          },
+        ],
       },
     },
 
@@ -360,8 +376,24 @@ export const getMyStatisticsAggregate = async (userId: string) => {
     {
       $match: {
         "mainContent.officers": objectUserId,
-        "mainContent.progress": "PENDING",
-        "mainContent.submissionDeadline": { $lt: now },
+        $or: [
+          // 🔴 chưa hoàn thành nhưng quá hạn
+          {
+            "mainContent.progress": "PENDING",
+            "mainContent.submissionDeadline": { $ne: null, $lt: now },
+          },
+
+          // 🔴 hoàn thành nhưng trễ
+          {
+            "mainContent.completedAt": { $ne: null },
+            $expr: {
+              $gt: [
+                "$mainContent.completedAt",
+                "$mainContent.submissionDeadline",
+              ],
+            },
+          },
+        ],
       },
     },
 

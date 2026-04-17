@@ -156,10 +156,19 @@ export const addCaseItem = async ({
   // =======================
   const doc = await getOrCreateMonthlyCase(workDate);
 
+  const DONE_PROGRESS = [
+    "DONE_HANDOVER",
+    "DONE_CONTACTED",
+    "DONE_NOT_CONTACTED",
+  ];
+
+  const isDone = data.progress && DONE_PROGRESS.includes(data.progress);
+
   const newItem = {
     ...data,
     workDate,
     createdBy: new Types.ObjectId(userId),
+    completedAt: isDone ? new Date() : undefined,
   };
 
   // =======================
@@ -259,6 +268,33 @@ export const updateCaseItem = async ({
   Object.keys(data).forEach((key) => {
     updateData[`mainContent.$.${key}`] = (data as any)[key];
   });
+
+  const DONE_PROGRESS = [
+    "DONE_HANDOVER",
+    "DONE_CONTACTED",
+    "DONE_NOT_CONTACTED",
+  ];
+
+  const oldProgress = oldItem.progress;
+  const newProgress = data.progress;
+
+  // 🔥 chỉ set khi từ chưa DONE → DONE
+  if (
+    newProgress &&
+    DONE_PROGRESS.includes(newProgress) &&
+    !DONE_PROGRESS.includes(oldProgress || "")
+  ) {
+    updateData["mainContent.$.completedAt"] = new Date();
+  }
+
+  // 🔁 (optional) nếu từ DONE → không DONE thì clear
+  if (
+    newProgress &&
+    !DONE_PROGRESS.includes(newProgress) &&
+    DONE_PROGRESS.includes(oldProgress || "")
+  ) {
+    updateData["mainContent.$.completedAt"] = null;
+  }
 
   // =======================
   // 🔹 4. Update DB

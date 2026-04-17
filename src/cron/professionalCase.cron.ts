@@ -9,22 +9,50 @@ export const startProfessionalCaseCron = () => {
       console.log("⏰ Running professional case deadline reminder...");
 
       const now = new Date();
+      const threeDaysLater = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
 
       const cases = await ProfessionalCase.find({
-        "mainContent.submissionDeadline": { $ne: null },
+        "mainContent.submissionDeadline": {
+          $ne: null,
+          $lte: threeDaysLater,
+        },
       });
 
+      const DONE_PROGRESS = [
+        "DONE_HANDOVER",
+        "DONE_CONTACTED",
+        "DONE_NOT_CONTACTED",
+      ];
+
       for (const caseDoc of cases) {
+        let updated = false;
+
         for (const item of caseDoc.mainContent) {
           if (!item.submissionDeadline) continue;
+          if (DONE_PROGRESS.includes(item.progress)) continue;
 
           const deadline = new Date(item.submissionDeadline);
 
-          const diffTime = deadline.getTime() - now.getTime();
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          const startOfToday = new Date();
+          startOfToday.setHours(0, 0, 0, 0);
 
-          // 🔥 UX: giống Task (tránh spam vô nghĩa)
+          const startOfDeadline = new Date(deadline);
+          startOfDeadline.setHours(0, 0, 0, 0);
+
+          const diffDays = Math.round(
+            (startOfDeadline.getTime() - startOfToday.getTime()) /
+              (1000 * 60 * 60 * 24),
+          );
+
           if (![3, 1, 0].includes(diffDays) && diffDays >= 0) continue;
+
+          // 🔥 chống spam
+          const today = now.toDateString();
+          const lastSent = item.lastReminderAt
+            ? new Date(item.lastReminderAt).toDateString()
+            : null;
+
+          if (lastSent === today) continue;
 
           const deadlineStr = deadline.toLocaleDateString("vi-VN");
 
@@ -48,21 +76,27 @@ export const startProfessionalCaseCron = () => {
 
           try {
             await sendNotificationToMany({
-              userIds: userIds,
+              userIds,
               title: "Nhắc nhở hạn nộp hồ sơ",
               body: message,
               type: "PROFESSIONAL_DEADLINE_SET",
               data: {
                 caseId: caseDoc._id.toString(),
-                type: "PROFESSIONAL_DEADLINE_SET",
                 name: caseDoc.caseCode.toString(),
                 month: caseDoc.caseMonth.toString(),
                 year: caseDoc.caseYear.toString(),
               },
             });
+
+            item.lastReminderAt = now;
+            updated = true;
           } catch (err) {
             console.error("Send notification failed:", err);
           }
+        }
+
+        if (updated) {
+          await caseDoc.save();
         }
       }
     },

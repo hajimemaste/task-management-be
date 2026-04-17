@@ -58,6 +58,9 @@ export interface ICaseItem {
   // 👉 NEW FIELD
   submissionDeadline?: Date;
   participants?: string;
+  lastReminderAt?: Date;
+
+  completedAt?: Date;
 
   createdBy: ObjectId;
 

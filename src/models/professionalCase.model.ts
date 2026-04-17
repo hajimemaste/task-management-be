@@ -62,6 +62,12 @@ const CaseItemSchema = new Schema(
       type: Date,
       default: null,
     },
+
+    lastReminderAt: {
+      type: Date,
+    },
+
+    completedAt: Date,
   },
   {
     timestamps: true,
