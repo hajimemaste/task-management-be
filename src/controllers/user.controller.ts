@@ -64,9 +64,7 @@ export const getActiveUsersController = async (
   next: NextFunction,
 ) => {
   try {
-    const userId = req.user!.id.toString();
-
-    const users = await getActiveUsersService(userId);
+    const users = await getActiveUsersService();
 
     res.status(200).json({
       message: "Get active users successfully",

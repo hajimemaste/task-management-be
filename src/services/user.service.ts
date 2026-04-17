@@ -57,10 +57,9 @@ export const getProfileService = async (userId: string) => {
   return user;
 };
 
-export const getActiveUsersService = async (currentUserId: string) => {
+export const getActiveUsersService = async () => {
   const users = await User.find({
     status: "approved",
-    _id: { $ne: currentUserId },
   })
     .select(
       "-password -otp -otpExpiredAt -resetPasswordOtp -resetPasswordOtpExpiredAt",

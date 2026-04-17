@@ -396,6 +396,10 @@ export const approveUserService = async (userId: string, adminId: string) => {
 };
 
 export const disableUserService = async (userId: string, adminId: string) => {
+  if (userId === adminId) {
+    throw new ApiError(404, "Không thể vô hiệu hoá chính mình");
+  }
+
   const user = await User.findById(userId);
 
   if (!user) {
