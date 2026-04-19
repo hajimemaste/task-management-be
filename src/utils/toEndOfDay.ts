@@ -13,5 +13,5 @@ export const toEndOfDay = (date: string | Date): Date => {
     d = date.getDate();
   }
 
-  return new Date(y, m - 1, d, 23, 59, 59, 999);
+  return new Date(y, m - 1, d, 0, 0, 0, 0);
 };
