@@ -503,15 +503,20 @@ export const updateTask = async ({
   if (deadline) {
     const deadlineDate = toEndOfDay(deadline);
 
-    task.deadline = deadlineDate; // 🔥 chỉ set 1 lần
+    task.deadline = deadlineDate;
 
-    if (deadlineDate.getTime() < Date.now()) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const deadlineOnly = new Date(deadlineDate);
+    deadlineOnly.setHours(0, 0, 0, 0);
+
+    if (deadlineOnly.getTime() < today.getTime()) {
       task.status = "OVERDUE";
     } else {
       task.status = "ACTIVE";
     }
   }
-
   // =======================
   // 🔥 4. HANDLE ASSIGNMENTS
   // =======================
