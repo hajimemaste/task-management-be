@@ -2,15 +2,18 @@ export const toEndOfDay = (date: string | Date): Date => {
   let y: number, m: number, d: number;
 
   if (typeof date === "string") {
-    // 🔥 lấy phần YYYY-MM-DD
-    const datePart = date.split("T")[0];
-    [y, m, d] = datePart.split("-").map(Number);
+    // ✅ luôn parse thủ công, tránh timezone bug
+    const [year, month, day] = date.split("T")[0].split("-").map(Number);
+    y = year;
+    m = month;
+    d = day;
   } else {
-    const tmp = new Date(date);
-    y = tmp.getFullYear();
-    m = tmp.getMonth() + 1;
-    d = tmp.getDate();
+    // ⚠️ tránh lệch timezone
+    y = date.getFullYear();
+    m = date.getMonth() + 1;
+    d = date.getDate();
   }
 
+  // ✅ luôn tạo theo local VN
   return new Date(y, m - 1, d, 23, 59, 59, 999);
 };
