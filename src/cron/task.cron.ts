@@ -56,7 +56,12 @@ export const startTaskCron = () => {
           } else if (diffDays === 0) {
             message = `${task.title} cần báo cáo hôm nay`;
           } else {
-            message = `${task.title} đã quá hạn ${Math.abs(diffDays)} ngày`;
+            const overdueDays = Math.abs(diffDays);
+
+            // 🔥 CHỈ gửi 1 lần khi vừa quá hạn
+            if (overdueDays !== 1) continue;
+
+            message = `${task.title} đã quá hạn ${overdueDays} ngày`;
           }
 
           // =======================

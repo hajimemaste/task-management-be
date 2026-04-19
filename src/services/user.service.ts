@@ -241,9 +241,40 @@ export const getFullStatisticsAggregate = async () => {
           $sum: {
             $cond: [
               {
-                $and: [
-                  { $ne: ["$status", "COMPLETED"] },
-                  { $lt: ["$deadline", today] }, // ✅ FIX
+                $or: [
+                  // 🔴 chưa hoàn thành nhưng quá hạn (theo ngày)
+                  {
+                    $and: [
+                      { $ne: ["$status", "COMPLETED"] },
+                      { $lt: ["$deadline", today] },
+                    ],
+                  },
+
+                  // 🔴 đã hoàn thành nhưng trễ (so theo ngày)
+                  {
+                    $and: [
+                      { $eq: ["$status", "COMPLETED"] },
+                      { $ne: ["$completedAt", null] },
+                      {
+                        $gt: [
+                          {
+                            $dateTrunc: {
+                              date: "$completedAt",
+                              unit: "day",
+                              timezone: "Asia/Ho_Chi_Minh",
+                            },
+                          },
+                          {
+                            $dateTrunc: {
+                              date: "$deadline",
+                              unit: "day",
+                              timezone: "Asia/Ho_Chi_Minh",
+                            },
+                          },
+                        ],
+                      },
+                    ],
+                  },
                 ],
               },
               1,
@@ -368,9 +399,40 @@ export const getMyStatisticsAggregate = async (userId: string) => {
           $sum: {
             $cond: [
               {
-                $and: [
-                  { $ne: ["$status", "COMPLETED"] },
-                  { $lt: ["$deadline", today] },
+                $or: [
+                  // 🔴 chưa hoàn thành nhưng quá hạn (theo ngày)
+                  {
+                    $and: [
+                      { $ne: ["$status", "COMPLETED"] },
+                      { $lt: ["$deadline", today] },
+                    ],
+                  },
+
+                  // 🔴 đã hoàn thành nhưng trễ (so theo ngày)
+                  {
+                    $and: [
+                      { $eq: ["$status", "COMPLETED"] },
+                      { $ne: ["$completedAt", null] },
+                      {
+                        $gt: [
+                          {
+                            $dateTrunc: {
+                              date: "$completedAt",
+                              unit: "day",
+                              timezone: "Asia/Ho_Chi_Minh",
+                            },
+                          },
+                          {
+                            $dateTrunc: {
+                              date: "$deadline",
+                              unit: "day",
+                              timezone: "Asia/Ho_Chi_Minh",
+                            },
+                          },
+                        ],
+                      },
+                    ],
+                  },
                 ],
               },
               1,
