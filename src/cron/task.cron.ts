@@ -13,18 +13,12 @@ export const startTaskCron = () => {
 
       try {
         // =======================
-        // 🔥 1. UPDATE OVERDUE (BATCH)
+        // 🔥 1. UPDATE OVERDUE (CHỈ ACTIVE)
         // =======================
-        const startOfToday = new Date(
-          now.getFullYear(),
-          now.getMonth(),
-          now.getDate(),
-        );
-
         await Task.updateMany(
           {
-            status: { $in: ["ACTIVE", "PENDING_APPROVAL"] },
-            deadline: { $lt: startOfToday },
+            status: "ACTIVE",
+            deadline: { $lt: now },
           },
           {
             $set: { status: "OVERDUE" },
@@ -32,7 +26,7 @@ export const startTaskCron = () => {
         );
 
         // =======================
-        // 🔥 2. LẤY TASKS CẦN NOTIFY
+        // 🔥 2. LẤY TASK CẦN NOTIFY
         // =======================
         const tasks = await Task.find({
           status: { $in: ["ACTIVE", "PENDING_APPROVAL", "OVERDUE"] },
@@ -72,23 +66,28 @@ export const startTaskCron = () => {
           // 🔥 5. PHÂN LOẠI NOTIFICATION
           // =======================
           let userIds: string[] = [];
-          let type = "TASK_REMINDER" as NotificationType;
+          let type: NotificationType = "TASK_REMINDER";
           let title = "Nhắc nhở nhiệm vụ";
 
-          // 👉 ACTIVE + OVERDUE → gửi cho members
-          if (["ACTIVE", "OVERDUE"].includes(task.status)) {
-            userIds = task.assignments.map((a) => a.userId.toString());
-          }
-
-          // 👉 PENDING_APPROVAL → gửi admin
+          // ✅ CASE 1: PENDING_APPROVAL → chỉ admin
           if (task.status === "PENDING_APPROVAL") {
             userIds = [task.createdBy.toString()];
             type = "TASK_NEED_APPROVAL";
             title = "Cần duyệt nhiệm vụ";
           }
 
-          // 👉 OVERDUE → override
-          if (task.status === "OVERDUE") {
+          // ✅ CASE 2: ACTIVE → members
+          else if (task.status === "ACTIVE") {
+            userIds = task.assignments.map((a) => a.userId.toString());
+          }
+
+          // ✅ CASE 3: OVERDUE → members + admin
+          else if (task.status === "OVERDUE") {
+            const memberIds = task.assignments.map((a) => a.userId.toString());
+            const adminId = task.createdBy.toString();
+
+            userIds = [...new Set([...memberIds, adminId])];
+
             type = "TASK_REMINDER";
             title = "Nhiệm vụ đã trễ hạn";
           }

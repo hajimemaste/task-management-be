@@ -4,7 +4,6 @@ import { ApiError } from "../utils/ApiError";
 import { sendNotificationToMany } from "./notification.service";
 import { deleteFolder, renameFolderService } from "./dropbox.service";
 import { User } from "../models/user.model";
-import { toEndOfDay } from "../utils/toEndOfDay";
 // =======================
 // 🔹 1. Tạo task (Admin)
 // =======================
@@ -54,7 +53,7 @@ export const createTask = async ({
     title,
     description,
     category,
-    deadline: toEndOfDay(deadline),
+    deadline: deadline,
     attachments,
     assignments,
     createdBy: userId,
@@ -501,7 +500,7 @@ export const updateTask = async ({
   // =======================
 
   if (deadline) {
-    const deadlineDate = toEndOfDay(deadline);
+    const deadlineDate = deadline;
 
     task.deadline = deadlineDate; // 🔥 chỉ set 1 lần
 
