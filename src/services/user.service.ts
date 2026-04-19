@@ -117,7 +117,8 @@ export const removeFCMTokenService = async (userId: string, token: string) => {
 // Thông kê
 
 export const getFullStatisticsAggregate = async () => {
-  const now = new Date();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   // =====================
   // 🔴 TOTAL HS (ALL)
@@ -179,7 +180,10 @@ export const getFullStatisticsAggregate = async () => {
           // 🔴 chưa hoàn thành nhưng quá hạn
           {
             "mainContent.progress": "PENDING",
-            "mainContent.submissionDeadline": { $ne: null, $lt: now },
+            "mainContent.submissionDeadline": {
+              $ne: null,
+              $lt: today, // ✅ FIX
+            },
           },
 
           // 🔴 hoàn thành nhưng trễ
@@ -187,8 +191,20 @@ export const getFullStatisticsAggregate = async () => {
             "mainContent.completedAt": { $ne: null },
             $expr: {
               $gt: [
-                "$mainContent.completedAt",
-                "$mainContent.submissionDeadline",
+                {
+                  $dateTrunc: {
+                    date: "$mainContent.completedAt",
+                    unit: "day",
+                    timezone: "Asia/Ho_Chi_Minh",
+                  },
+                },
+                {
+                  $dateTrunc: {
+                    date: "$mainContent.submissionDeadline",
+                    unit: "day",
+                    timezone: "Asia/Ho_Chi_Minh",
+                  },
+                },
               ],
             },
           },
@@ -207,6 +223,7 @@ export const getFullStatisticsAggregate = async () => {
   // =====================
   // 🔵 TASK STATS (THEO USER)
   // =====================
+
   const taskStats = await Task.aggregate([
     { $unwind: "$assignments" },
 
@@ -226,7 +243,7 @@ export const getFullStatisticsAggregate = async () => {
               {
                 $and: [
                   { $ne: ["$status", "COMPLETED"] },
-                  { $lt: ["$deadline", now] },
+                  { $lt: ["$deadline", today] }, // ✅ FIX
                 ],
               },
               1,
@@ -274,10 +291,9 @@ export const getFullStatisticsAggregate = async () => {
         hoanThanhHoSo: caseData.hoanThanhHoSo || 0,
 
         // 🔥 GỘP 2 NGUỒN
-        thamMuuVanBan:
-          (taskData.thamMuuVanBan || 0) + (lateCaseData.lateCases || 0),
+        thamMuuVanBan: taskData.thamMuuVanBan || 0,
 
-        treHan: taskData.treHan || 0,
+        treHan: (taskData.treHan || 0) + (lateCaseData.lateCases || 0),
       },
     };
   });
@@ -290,7 +306,9 @@ export const getFullStatisticsAggregate = async () => {
 };
 
 export const getMyStatisticsAggregate = async (userId: string) => {
-  const now = new Date();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const objectUserId = new Types.ObjectId(userId);
 
   // =====================
@@ -352,7 +370,7 @@ export const getMyStatisticsAggregate = async (userId: string) => {
               {
                 $and: [
                   { $ne: ["$status", "COMPLETED"] },
-                  { $lt: ["$deadline", now] },
+                  { $lt: ["$deadline", today] },
                 ],
               },
               1,
@@ -380,7 +398,10 @@ export const getMyStatisticsAggregate = async (userId: string) => {
           // 🔴 chưa hoàn thành nhưng quá hạn
           {
             "mainContent.progress": "PENDING",
-            "mainContent.submissionDeadline": { $ne: null, $lt: now },
+            "mainContent.submissionDeadline": {
+              $ne: null,
+              $lt: today, // ✅ FIX
+            },
           },
 
           // 🔴 hoàn thành nhưng trễ
@@ -388,8 +409,20 @@ export const getMyStatisticsAggregate = async (userId: string) => {
             "mainContent.completedAt": { $ne: null },
             $expr: {
               $gt: [
-                "$mainContent.completedAt",
-                "$mainContent.submissionDeadline",
+                {
+                  $dateTrunc: {
+                    date: "$mainContent.completedAt",
+                    unit: "day",
+                    timezone: "Asia/Ho_Chi_Minh",
+                  },
+                },
+                {
+                  $dateTrunc: {
+                    date: "$mainContent.submissionDeadline",
+                    unit: "day",
+                    timezone: "Asia/Ho_Chi_Minh",
+                  },
+                },
               ],
             },
           },
@@ -413,9 +446,9 @@ export const getMyStatisticsAggregate = async (userId: string) => {
     hoanThanhHoSo: caseData.hoanThanhHoSo || 0,
 
     // 🔥 GỘP 2 NGUỒN
-    thamMuuVanBan: (taskData.thamMuuVanBan || 0) + lateCases,
+    thamMuuVanBan: taskData.thamMuuVanBan || 0,
 
-    treHan: taskData.treHan || 0,
+    treHan: taskData.treHan || 0 + lateCases,
   };
 };
 

@@ -44,7 +44,7 @@ export const startProfessionalCaseCron = () => {
               (1000 * 60 * 60 * 24),
           );
 
-          if (![3, 1, 0].includes(diffDays) && diffDays >= 0) continue;
+          if (![3, 1, 0, -1].includes(diffDays)) continue;
 
           // 🔥 chống spam
           const today = now.toDateString();

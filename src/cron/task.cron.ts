@@ -54,7 +54,7 @@ export const startTaskCron = () => {
           if (diffDays > 0) {
             message = `${task.title} còn ${diffDays} ngày`;
           } else if (diffDays === 0) {
-            message = `${task.title} đến hạn hôm nay`;
+            message = `${task.title} cần báo cáo hôm nay`;
           } else {
             message = `${task.title} đã quá hạn ${Math.abs(diffDays)} ngày`;
           }
