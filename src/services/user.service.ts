@@ -470,6 +470,7 @@ export const getMyStatisticsAggregate = async (userId: string) => {
           // 🔴 hoàn thành nhưng trễ
           {
             "mainContent.completedAt": { $ne: null },
+            "mainContent.submissionDeadline": { $ne: null },
             $expr: {
               $gt: [
                 {
