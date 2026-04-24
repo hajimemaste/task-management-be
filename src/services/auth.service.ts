@@ -58,7 +58,7 @@ export const loginService = async (email: string, password: string) => {
       role: user.role,
     },
     process.env.JWT_SECRET!,
-    { expiresIn: "15m" },
+    { expiresIn: "30d" },
   );
 
   const refreshToken = jwt.sign(
@@ -68,7 +68,7 @@ export const loginService = async (email: string, password: string) => {
       role: user.role,
     },
     process.env.JWT_REFRESH_SECRET!,
-    { expiresIn: "7d" },
+    { expiresIn: "30d" },
   );
 
   return {
@@ -142,7 +142,7 @@ export const googleLoginService = async (firebaseToken: string) => {
       role: user.role,
     },
     process.env.JWT_SECRET!,
-    { expiresIn: "15m" },
+    { expiresIn: "30d" },
   );
 
   const refreshToken = jwt.sign(
@@ -152,7 +152,7 @@ export const googleLoginService = async (firebaseToken: string) => {
       role: user.role,
     },
     process.env.JWT_REFRESH_SECRET!,
-    { expiresIn: "7d" },
+    { expiresIn: "30d" },
   );
 
   return {
