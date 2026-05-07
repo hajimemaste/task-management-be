@@ -266,14 +266,31 @@ export const deleteTask = async ({ taskId, adminId }: any) => {
 // 🔹 6. Lấy task của user
 // =======================
 
-export const getMyTasks = async (userId: string) => {
+export const getMyTasks = async (userId: string, month?: number) => {
+  const currentMonth = new Date().getMonth() + 1; // 1 -> 12
+  const filterMonth = month || currentMonth;
+
   const tasks = await Task.aggregate([
     {
       $match: {
         "assignments.userId": new Types.ObjectId(userId),
       },
     },
-
+    {
+      $match: {
+        $expr: {
+          $eq: [
+            {
+              $month: {
+                date: "$deadline",
+                timezone: "Asia/Ho_Chi_Minh",
+              },
+            },
+            filterMonth,
+          ],
+        },
+      },
+    },
     // 🔥 priority mới
     {
       $addFields: {
@@ -309,8 +326,26 @@ export const getMyTasks = async (userId: string) => {
 // 🔹 7. Admin lấy tất cả
 // =======================
 
-export const getAllTasks = async () => {
+export const getAllTasks = async (month?: number) => {
+  const currentMonth = new Date().getMonth() + 1; // 1 -> 12
+  const filterMonth = month || currentMonth;
+
   const tasks = await Task.aggregate([
+    {
+      $match: {
+        $expr: {
+          $eq: [
+            {
+              $month: {
+                date: "$deadline",
+                timezone: "Asia/Ho_Chi_Minh",
+              },
+            },
+            filterMonth,
+          ],
+        },
+      },
+    },
     {
       $addFields: {
         priority: {
