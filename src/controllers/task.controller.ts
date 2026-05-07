@@ -116,11 +116,12 @@ export const cancelTask = async (req: Request, res: Response) => {
 export const getMyTasks = async (req: Request, res: Response) => {
   const userId = req.user!.id.toString();
 
-  const { month } = req.query;
+  const { month, year } = req.query;
 
   const data = await taskService.getMyTasks(
     userId,
     month ? Number(month) : undefined,
+    year ? Number(year) : undefined,
   );
 
   res.json({ success: true, data });
@@ -131,9 +132,12 @@ export const getMyTasks = async (req: Request, res: Response) => {
 // =======================
 
 export const getAllTasks = async (req: Request, res: Response) => {
-  const { month } = req.query;
+  const { month, year } = req.query;
 
-  const data = await taskService.getAllTasks(month ? Number(month) : undefined);
+  const data = await taskService.getAllTasks(
+    month ? Number(month) : undefined,
+    year ? Number(year) : undefined,
+  );
 
   res.json({ success: true, data });
 };

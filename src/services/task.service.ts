@@ -266,9 +266,14 @@ export const deleteTask = async ({ taskId, adminId }: any) => {
 // 🔹 6. Lấy task của user
 // =======================
 
-export const getMyTasks = async (userId: string, month?: number) => {
+export const getMyTasks = async (
+  userId: string,
+  month?: number,
+  year?: number,
+) => {
   const currentMonth = new Date().getMonth() + 1; // 1 -> 12
   const filterMonth = month || currentMonth;
+  const filterYear = year || new Date().getFullYear();
 
   const tasks = await Task.aggregate([
     {
@@ -279,14 +284,29 @@ export const getMyTasks = async (userId: string, month?: number) => {
     {
       $match: {
         $expr: {
-          $eq: [
+          $and: [
             {
-              $month: {
-                date: "$deadline",
-                timezone: "Asia/Ho_Chi_Minh",
-              },
+              $eq: [
+                {
+                  $month: {
+                    date: "$deadline",
+                    timezone: "Asia/Ho_Chi_Minh",
+                  },
+                },
+                filterMonth,
+              ],
             },
-            filterMonth,
+            {
+              $eq: [
+                {
+                  $year: {
+                    date: "$deadline",
+                    timezone: "Asia/Ho_Chi_Minh",
+                  },
+                },
+                filterYear,
+              ],
+            },
           ],
         },
       },
@@ -326,22 +346,38 @@ export const getMyTasks = async (userId: string, month?: number) => {
 // 🔹 7. Admin lấy tất cả
 // =======================
 
-export const getAllTasks = async (month?: number) => {
+export const getAllTasks = async (month?: number, year?: number) => {
   const currentMonth = new Date().getMonth() + 1; // 1 -> 12
   const filterMonth = month || currentMonth;
+  const filterYear = year || new Date().getFullYear();
 
   const tasks = await Task.aggregate([
     {
       $match: {
         $expr: {
-          $eq: [
+          $and: [
             {
-              $month: {
-                date: "$deadline",
-                timezone: "Asia/Ho_Chi_Minh",
-              },
+              $eq: [
+                {
+                  $month: {
+                    date: "$deadline",
+                    timezone: "Asia/Ho_Chi_Minh",
+                  },
+                },
+                filterMonth,
+              ],
             },
-            filterMonth,
+            {
+              $eq: [
+                {
+                  $year: {
+                    date: "$deadline",
+                    timezone: "Asia/Ho_Chi_Minh",
+                  },
+                },
+                filterYear,
+              ],
+            },
           ],
         },
       },
