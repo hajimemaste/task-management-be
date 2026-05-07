@@ -116,14 +116,30 @@ export const removeFCMTokenService = async (userId: string, token: string) => {
 
 // Thông kê
 
-export const getFullStatisticsAggregate = async () => {
+export const getFullStatisticsAggregate = async (
+  month?: number,
+  year?: number,
+) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+
+  const filterMonth = month || today.getMonth() + 1;
+  const filterYear = year || today.getFullYear();
+
+  const start = new Date(filterYear, filterMonth - 1, 1);
+  const end = new Date(filterYear, filterMonth, 1);
 
   // =====================
   // 🔴 TOTAL HS (ALL)
   // =====================
   const totalHsAgg = await ProfessionalCase.aggregate([
+    {
+      $match: {
+        caseMonth: filterMonth,
+        caseYear: filterYear,
+      },
+    },
+
     { $unwind: "$mainContent" },
 
     {
@@ -144,11 +160,20 @@ export const getFullStatisticsAggregate = async () => {
   // =====================
   const totalTask = await Task.countDocuments({
     status: "COMPLETED",
+    completedAt: { $gte: start, $lt: end },
   });
+
   // =====================
   // 🔴 CASE STATS (THEO USER)
   // =====================
   const caseStats = await ProfessionalCase.aggregate([
+    {
+      $match: {
+        caseMonth: filterMonth,
+        caseYear: filterYear,
+      },
+    },
+
     { $unwind: "$mainContent" },
     { $unwind: "$mainContent.officers" },
 
@@ -171,6 +196,13 @@ export const getFullStatisticsAggregate = async () => {
   // 🔴 CASE TRỄ (THEO USER)
   // =====================
   const lateCaseStats = await ProfessionalCase.aggregate([
+    {
+      $match: {
+        caseMonth: filterMonth,
+        caseYear: filterYear,
+      },
+    },
+
     { $unwind: "$mainContent" },
     { $unwind: "$mainContent.officers" },
 
@@ -226,6 +258,15 @@ export const getFullStatisticsAggregate = async () => {
   // =====================
 
   const taskStats = await Task.aggregate([
+    {
+      $match: {
+        deadline: {
+          $gte: start,
+          $lt: end,
+        },
+      },
+    },
+
     { $unwind: "$assignments" },
 
     {

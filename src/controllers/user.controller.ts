@@ -123,7 +123,9 @@ export const getFullStatisticsController = async (
   res: Response,
 ) => {
   try {
-    const data = await getFullStatisticsAggregate();
+    const { month, year } = req.query;
+
+    const data = await getFullStatisticsAggregate(Number(month), Number(year));
 
     res.status(200).json({
       success: true,
