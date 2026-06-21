@@ -331,7 +331,7 @@ export const getFullStatisticsAggregate = async (
   // =====================
   // 🔗 MERGE
   // =====================
-  const users = await User.find({}).select("_id name role avatar").lean();
+  const users = await User.find({ status: { $ne: "disabled" } }).select("_id name role avatar").lean();
 
   const caseMap = new Map(
     caseStats.filter((c) => c._id).map((c) => [c._id.toString(), c]),

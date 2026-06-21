@@ -476,6 +476,7 @@ export const getUsersByStatusService = async (
   const filter: any = {
     role: { $ne: "admin" },
     isEmailVerified: true,
+    status: { $ne: "disabled" },
   };
 
   if (status) {
