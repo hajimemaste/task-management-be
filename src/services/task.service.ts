@@ -5,7 +5,6 @@ import { sendNotificationToMany } from "./notification.service";
 import { deleteFolder, renameFolderService } from "./dropbox.service";
 import { User } from "../models/user.model";
 import { toEndOfDay } from "../utils/toEndOfDay";
-import { isSafeTaskFolder, validateTaskFolder } from "../utils/dropboxPath";
 // =======================
 // 🔹 1. Tạo task (Admin)
 // =======================
@@ -46,8 +45,6 @@ export const createTask = async ({
     throw new ApiError(400, "Tên nhiệm vụ đã tồn tại");
   }
 
-  const safeAttachments = validateTaskFolder(attachments);
-
   const assignments = userIds.map((id: string) => ({
     userId: new Types.ObjectId(id),
     status: "PENDING",
@@ -58,7 +55,7 @@ export const createTask = async ({
     description,
     category,
     deadline: toEndOfDay(deadline),
-    attachments: safeAttachments,
+    attachments,
     assignments,
     createdBy: userId,
   });
@@ -240,10 +237,7 @@ export const deleteTask = async ({ taskId, adminId }: any) => {
 
   // 🔥 xoá folder Dropbox trước (nếu có)
   try {
-    if (task.attachments && !isSafeTaskFolder(task.attachments)) {
-      // ⚠️ path nguy hiểm (vd "/app") → KHÔNG xoá trên Dropbox
-      console.warn("⚠️ Bỏ qua xoá folder không hợp lệ:", task.attachments);
-    } else if (task.attachments) {
+    if (task.attachments) {
       await deleteFolder(task.attachments);
     }
   } catch (err) {
@@ -551,23 +545,12 @@ export const updateTask = async ({
     throw new ApiError(400, "Tên nhiệm vụ đã tồn tại");
   }
 
-  const safeAttachments = validateTaskFolder(attachments);
-
   // =======================
   // 🔥 2. RENAME FOLDER (nếu attachments đổi)
   // =======================
-  if (
-    safeAttachments &&
-    task.attachments &&
-    safeAttachments !== task.attachments
-  ) {
-    // ⚠️ folder cũ không hợp lệ → không move (tránh move cả /app)
-    if (!isSafeTaskFolder(task.attachments)) {
-      throw new ApiError(400, "Thư mục đính kèm hiện tại không hợp lệ");
-    }
-
+  if (attachments && task.attachments && attachments !== task.attachments) {
     try {
-      await renameFolderService(task.attachments, safeAttachments);
+      await renameFolderService(task.attachments, attachments);
     } catch (err) {
       console.error("❌ Rename folder lỗi:", err);
       throw new ApiError(500, "Không thể đổi tên thư mục");
@@ -580,7 +563,7 @@ export const updateTask = async ({
   task.title = title;
   task.description = description;
   task.category = category;
-  task.attachments = safeAttachments;
+  task.attachments = attachments;
 
   // =======================
   // 🔥 3.1 UPDATE STATUS BY DEADLINE
