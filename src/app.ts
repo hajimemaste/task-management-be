@@ -11,11 +11,12 @@ import professionalCaseRoutes from "./routes/professionalCase.route";
 import autopsyCaseRoutes from "./routes/autopsyCase.router";
 import taskRoutes from "./routes/task.route";
 import errorMiddleware from "./middlewares/error.middleware";
+import { corsOptions } from "./configs/cors.config";
 
 const app = express();
 const server = http.createServer(app);
 
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 initSocket(server);

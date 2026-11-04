@@ -45,9 +45,16 @@ router.patch(
   taskController.approveTask,
 );
 
-// huỷ task
+// xoá hẳn task (giữ route /cancel cũ cho app mobile)
 router.patch(
   "/:taskId/cancel",
+  authMiddleware,
+  requireAdmin,
+  taskController.cancelTask,
+);
+
+router.delete(
+  "/:taskId",
   authMiddleware,
   requireAdmin,
   taskController.cancelTask,

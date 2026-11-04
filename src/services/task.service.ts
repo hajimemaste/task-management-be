@@ -4,6 +4,7 @@ import { ApiError } from "../utils/ApiError";
 import { sendNotificationToMany } from "./notification.service";
 import { deleteFolder, renameFolderService } from "./dropbox.service";
 import { User } from "../models/user.model";
+import { Notification } from "../models/notification.model";
 import { toEndOfDay } from "../utils/toEndOfDay";
 // =======================
 // 🔹 1. Tạo task (Admin)
@@ -245,8 +246,11 @@ export const deleteTask = async ({ taskId, adminId }: any) => {
     // 👉 không throw để không block xoá task
   }
 
-  // 👉 xoá DB
+  // 👉 xoá hẳn khỏi DB → không còn xuất hiện trong danh sách / thống kê / dashboard
   await Task.deleteOne({ _id: taskId });
+
+  // 👉 xoá các thông báo cũ trỏ tới task này (tránh link tới task không còn tồn tại)
+  await Notification.deleteMany({ "data.taskId": taskId.toString() });
 
   // 🔔 notification
   await sendNotificationToMany({
